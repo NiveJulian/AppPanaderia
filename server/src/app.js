@@ -16,7 +16,8 @@ server.use(cookieParser());
 server.use(
   cors({
     origin: [
-      "http://localhost:5173"
+      "http://localhost:5173",
+      "https://server-espigadeoro.vercel.app/"
     ],
     credentials: true,
   })

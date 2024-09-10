@@ -37,7 +37,7 @@ const Dashboard = () => {
     <Layout isAuth={isAuth}>
       {/* {showCart && <Cart product={cartItems} calcularTotal={calculateTotal} onClose={toggleCart} />} */}
       <div className="flex justify-between items-center">
-        <h1 className="text-xl text-gray-300">Panel de control</h1>
+        <h1 className="text-xl text-white">Panel de control</h1>
       </div>
       <div className="mt-5">
         {renderProducts()}

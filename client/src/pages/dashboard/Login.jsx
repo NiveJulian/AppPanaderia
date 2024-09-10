@@ -13,12 +13,92 @@ const Login = () => {
   };
   return (
     <div className="bg-gray-100 flex justify-center items-center h-screen">
-      <div className="w-1/2 h-full hidden lg:block">
-        <img
-          src={"../initLogin.webp"}
-          alt="Placeholder Image"
-          className="object-fill w-full h-full"
-        />
+      <div className="w-1/2 hidden lg:inline-flex h-full text-white">
+        <div className="w-[550px] shadow-md shadow-gray-400 h-full bg-gray-800 px-10 flex flex-col gap-6 justify-center">
+          <div className="flex flex-row justify-center items-center gap-2 border-b">
+            <div className="mb-2">
+              <Link to="/">
+                <img
+                  src={"zeppelinstore.webp"}
+                  alt="logoImg"
+                  className="w-20 h-20 rounded-full mt-4 border border-gray-400 p-1 hover:animate-pulse"
+                />
+              </Link>
+            </div>
+            <div className="flex flex-col">
+              <h1 className="font-titleFont text-2xl font-bold">Bienvenido!</h1>
+              <p className="text-base">
+                Crea una cuenta para disfrutar de todos los beneficios
+              </p>
+            </div>
+          </div>
+          <div className="w-[300px] flex items-start gap-3">
+            <span className="mt-1"></span>
+            <p className="text-base text-gray-300">
+              <span className="text-white font-semibold font-titleFont">
+                Inicio rápido
+              </span>
+              <br />
+              Regístrate y comienza a comprar en minutos.
+            </p>
+          </div>
+          <div className="w-[300px] flex items-start gap-3">
+            <span className="text-green-500 mt-1"></span>
+            <p className="text-base text-gray-300">
+              <span className="text-white font-semibold font-titleFont">
+                Acceso a todos los servicios
+              </span>
+              <br />
+              Disfruta de todos los servicios que ofrecemos.
+            </p>
+          </div>
+          <div className="w-[300px] flex items-start gap-3">
+            <span className="text-green-500 mt-1"></span>
+            <p className="text-base text-gray-300">
+              <span className="text-white font-semibold font-titleFont">
+                Confiado por miles
+              </span>
+              <br />
+              Únete a una comunidad de clientes satisfechos.
+            </p>
+          </div>
+          <div className="w-[300px] flex items-start gap-3">
+            <span className="text-green-500 mt-1"></span>
+            <p className="text-base text-gray-300">
+              <span className="text-white font-semibold font-titleFont">
+                Historial de compras
+              </span>
+              <br />
+              Accede a tus compras anteriores fácilmente.
+            </p>
+          </div>
+          <div className="w-[300px] flex items-start gap-3">
+            <span className="text-green-500 mt-1"></span>
+            <p className="text-base text-gray-300">
+              <span className="text-white font-semibold font-titleFont">
+                Ofertas y descuentos exclusivos
+              </span>
+              <br />
+              Recibe promociones y descuentos solo para miembros.
+            </p>
+          </div>
+          <div className="flex items-center justify-between gap-2 mb-6">
+            <Link to="/">
+              <p className="text-sm font-semibold text-gray-300 hover:text-secondary cursor-pointer duration-300">
+                © 2024 Zeppelin store.
+              </p>
+            </Link>
+            <p className="text-sm font-semibold text-gray-300 hover:text-secondary cursor-pointer duration-300">
+              Términos
+            </p>
+            <p className="text-sm font-semibold text-gray-300 hover:text-secondary cursor-pointer duration-300">
+              Privacidad
+            </p>
+            <p className="text-sm font-semibold text-gray-300 hover:text-secondary cursor-pointer duration-300">
+              Seguridad
+            </p>
+          </div>
+        </div>
       </div>
       <div className="lg:p-36 md:p-52 sm:20 p-8 w-full h-full lg:w-1/2 flex justify-center gap-2 items-center flex-col">
         <h1 className="text-2xl font-semibold mb-4 text-center">Login</h1>
@@ -29,7 +109,7 @@ const Login = () => {
         <div className="mt-6 ml-10 mr-10 w-full">
           <button
             onClick={onGoogleSignIn}
-            className="group h-12 w-full px-6 border-2 border-gray-300 rounded-full transition duration-300 hover:border-primary focus:bg-pink-50 active:bg-pink-100"
+            className="group h-12 w-full px-6 border-2 border-gray-300 rounded-full transition duration-300 hover:border-primary focus:bg-beige active:bg-beige"
           >
             <div className="relative flex items-center space-x-4 justify-center">
               <LazyLoadImage
@@ -43,7 +123,7 @@ const Login = () => {
             </div>
           </button>
         </div>
-        <div
+        {/* <div
           className="flex w-full mt-4
          justify-center items-center gap-2"
         >
@@ -56,7 +136,7 @@ const Login = () => {
         <div className="mt-6 ml-10 mr-10 w-full">
           <button
             onClick={() => navigate("/register")}
-            className="group h-12 w-full px-6 border-2 border-gray-300 rounded-full transition duration-300 hover:border-primary focus:bg-pink-50 active:bg-pink-100"
+            className="group h-12 w-full px-6 border-2 border-gray-300 rounded-full transition duration-300 hover:border-primary focus:bg-beige active:bg-beige"
           >
             <div className="relative flex items-center space-x-4 justify-center">
               <svg
@@ -85,7 +165,7 @@ const Login = () => {
 
           <Link
             to={"/"}
-            className="text-sm border border-gray-200 hover:border-pink-400 hover:animate-pulse p-2 rounded-md text-gray-500 flex justify-center items-center gap-2 w-full text-nowrap"
+            className="text-sm border border-gray-200 hover:border-beige hover:animate-pulse p-2 rounded-md text-gray-500 flex justify-center items-center gap-2 w-full text-nowrap"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -104,7 +184,7 @@ const Login = () => {
             Ir a la pagina principal
           </Link>
           <span className="border border-gray-400 w-full"></span>
-        </div>
+        </div> */}
       </div>
     </div>
   );

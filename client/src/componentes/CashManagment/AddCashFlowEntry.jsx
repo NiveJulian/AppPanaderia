@@ -100,7 +100,7 @@ const AddCashFlowEntry = ({ onAddCashFlowEntry, onClose }) => {
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-pink-400 text-white rounded-md"
+              className="px-4 py-2 bg-beige text-white rounded-md"
             >
               Añadir
             </button>

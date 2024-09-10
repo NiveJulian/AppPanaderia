@@ -8,7 +8,7 @@ const Users = () => {
   return (
     <Layout isAuth={isAuth}>
       <div className="flex justify-between items-center">
-        <h1 className="text-xl text-gray-600">Vendedores</h1>
+        <h1 className="text-xl text-white">Vendedores</h1>
       </div>
       <div className="mt-8 w-full">
         <UsersData />

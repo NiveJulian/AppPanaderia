@@ -157,7 +157,7 @@ const Cart = ({ product, calcularTotal, usuario }) => {
   };
 
   return (
-    <div className="bg-pink-200 border border-gray-300 shadow-lg">
+    <div className="bg-beige border border-gray-300 shadow-lg">
       <div className="flex lg:flex-row flex-col shadow-lg">
         <div className="lg:w-2/3 bg-gray-50 h-screen m-1 text-center shadow-md p-6 rounded-xl flex flex-col">
           <div className="flex justify-between">
@@ -293,7 +293,7 @@ const Cart = ({ product, calcularTotal, usuario }) => {
                       </span>
                       <button
                         onClick={() => handleRemoveFromCart(i)}
-                        className="mt-2 font-semibold text-xs text-red-500 hover:text-pink-600"
+                        className="mt-2 font-semibold text-xs text-red-500 hover:text-beige"
                       >
                         Borrar
                       </button>

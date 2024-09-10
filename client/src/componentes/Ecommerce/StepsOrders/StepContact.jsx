@@ -54,7 +54,7 @@ const StepContact = ({ formCliente, handleFormClienteChange, nextStep }) => (
     {/* Resto de los campos */}
     <button
       onClick={nextStep}
-      className="border p-2 text-white bg-primary w-full hover:bg-pink-700 mt-4"
+      className="border p-2 text-white bg-primary w-full hover:bg-beige mt-4"
     >
       Siguiente
     </button>

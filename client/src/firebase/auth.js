@@ -29,19 +29,23 @@ export const doSignInWithGoogle = async () => {
       },
       body: JSON.stringify({ token: token }),
     });
+    console.log("Response: ",response);
+    console.log("token: ",token);
 
     if (response.ok) {
       toast.success("Ingreso exitoso, redirigiendo..");
       const { theUser } = await response.json();
       const { uid, email, displayName, photoURL } = result.user;
 
+      console.log("TheUser: ", theUser);
       const userInfo = {
         uid,
         email,
         name: displayName,
         picture: photoURL,
-        rol: theUser.rol, // Agregamos el rol al userInfo
+        // rol: theUser.rol, // Agregamos el rol al userInfo
       };
+      console.log("USER INFO: ", userInfo);
       const secretKey = import.meta.env.VITE_SECRET_KEY_BYCRYPT;
 
       const hashedUserInfo = CryptoJS.AES.encrypt(
@@ -210,7 +214,7 @@ export const doSignOut = async () => {
         console.log(error);
       });
     // Redireccionar a la página de inicio de sesión u otra página
-    window.location.replace("/login");
+    window.location.replace("/");
   } catch (error) {
     console.error("Error al cerrar sesión:", error);
   }

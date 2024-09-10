@@ -197,15 +197,15 @@ const DisplayProductDashboard = ({ products }) => {
           <div className="lg:w-2/3 h-screen overflow-y-scroll shadow-lg">
             <div className="flex flex-row justify-between items-center px-4 mt-5">
               <div className="text-gray-800">
-                <div className="font-bold text-xl flex gap-2 justify-center items-center">
+                <div className="font-bold font-serif text-xl flex gap-2 justify-center items-center">
                   <img
-                    src="../ninalogo.webp"
+                    src="../zeppelinstore.webp"
                     className="w-12 h-12 rounded-full"
                     alt=""
                   />
-                  NINA Showroom
+                  Zeppelin Store
                 </div>
-                <span className="text-xs">Location ID#MEND007</span>
+                <span className="text-xs">Location ID#PDL008</span>
               </div>
               <div className="flex items-center">
                 <div className="text-sm text-center mr-4">
@@ -277,7 +277,7 @@ const DisplayProductDashboard = ({ products }) => {
               <div className="font-semibold flex gap-2">
                 <span
                   onClick={() => dispatch(cleanCart())}
-                  className="px-4 py-2 hover:text-pink-200 rounded-md bg-secondary text-white cursor-pointer"
+                  className="px-4 py-2 hover:text-beige rounded-md bg-secondary text-white cursor-pointer"
                 >
                   Borrar todo
                 </span>
@@ -336,7 +336,7 @@ const DisplayProductDashboard = ({ products }) => {
                           </span>
                           <button
                             onClick={() => handleRemoveFromCart(i)}
-                            className="mt-2 font-semibold text-xs text-red-500 hover:text-pink-600"
+                            className="mt-2 font-semibold text-xs text-red-500 hover:text-beige"
                           >
                             Borrar
                           </button>

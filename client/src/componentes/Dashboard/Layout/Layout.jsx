@@ -27,11 +27,11 @@ export function Layout({ children, isAuth }) {
   }
 
   return (
-    <div className="h-full w-full flex flex-col md:flex-row bg-pink-50 relative">
-      <div className="md:hidden flex items-center justify-between p-4 bg-pink-50 w-full">
+    <div className="h-full w-full flex flex-col md:flex-row bg-beige relative">
+      <div className="md:hidden flex items-center justify-between p-4 bg-beige w-full">
         <button
           onClick={() => setShowNav(!showNav)}
-          className="p-2 border-2 border-gray-200 shadow-lg text-black focus:bg-primary focus:outline-none focus:text-pink-300 z-50 rounded-full"
+          className="p-2 border-2 border-gray-200 shadow-lg text-black focus:bg-primary focus:outline-none focus:text-beige300 z-50 rounded-full"
         >
           <svg
             className="w-5 h-5 fill-current"
@@ -49,7 +49,7 @@ export function Layout({ children, isAuth }) {
       </div>
       <div
         id="sidebar"
-        className={`bg-pink-100 h-full md:h-auto flex px-3 w-full md:w-60 lg:w-60 overflow-x-hidden transition-transform duration-300 ease-in-out transform ${
+        className={`bg-secondary h-full md:h-auto flex px-3 w-full md:w-60 lg:w-60 overflow-x-hidden transition-transform duration-300 ease-in-out transform ${
           showNav ? "translate-x-0" : "-translate-x-full"
         } md:translate-x-0 fixed md:static z-40 top-0 left-0 md:w-auto max-w-full md:max-w-none`}
       >

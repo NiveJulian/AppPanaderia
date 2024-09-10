@@ -7,15 +7,14 @@ import { getAuth } from "firebase/auth";
 // Your web app's Firebase configuration
 // For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: "AIzaSyBDTUVxIDzowD27wZgrmOzfv5QUnA-4kUE",
-  authDomain: "zeppelinstore-64f16.firebaseapp.com",
-  projectId: "zeppelinstore-64f16",
-  storageBucket: "zeppelinstore-64f16.appspot.com",
-  messagingSenderId: "1005264134005",
-  appId: "1:1005264134005:web:49a4b49076f4a49111bd3c",
-  measurementId: "G-J7X2JRT79R"
+  apiKey: "AIzaSyA2KDqwpiLd0gotq6-IbYM6lLhyHixwPmo",
+  authDomain: "apppanaderia-f9f34.firebaseapp.com",
+  projectId: "apppanaderia-f9f34",
+  storageBucket: "apppanaderia-f9f34.appspot.com",
+  messagingSenderId: "719123312352",
+  appId: "1:719123312352:web:38e2025a1a121a6b62aa85",
+  measurementId: "G-2DNWFNWQMH"
 };
-
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app)

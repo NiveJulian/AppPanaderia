@@ -29,23 +29,18 @@ export const doSignInWithGoogle = async () => {
       },
       body: JSON.stringify({ token: token }),
     });
-    console.log("Response: ",response);
-    console.log("token: ",token);
 
     if (response.ok) {
       toast.success("Ingreso exitoso, redirigiendo..");
       const { theUser } = await response.json();
       const { uid, email, displayName, photoURL } = result.user;
-
-      console.log("TheUser: ", theUser);
       const userInfo = {
         uid,
         email,
         name: displayName,
         picture: photoURL,
-        // rol: theUser.rol, // Agregamos el rol al userInfo
+        rol: theUser.rol, // Agregamos el rol al userInfo
       };
-      console.log("USER INFO: ", userInfo);
       const secretKey = import.meta.env.VITE_SECRET_KEY_BYCRYPT;
 
       const hashedUserInfo = CryptoJS.AES.encrypt(
@@ -60,7 +55,7 @@ export const doSignInWithGoogle = async () => {
 
       setTimeout(() => {
         if (theUser.rol === "vendedor" || theUser.rol === "admin") {
-          window.location.replace("/dashboard/dashboard");
+          window.location.replace("/dashboard");
         } else {
           window.location.replace("/");
         }
@@ -70,7 +65,7 @@ export const doSignInWithGoogle = async () => {
       throw new Error("Error al enviar el token al backend");
     }
   } catch (error) {
-    console.error("Error:", error);
+    console.error("Error:", error.message);
     toast.error("Error al ingresar");
   }
 };

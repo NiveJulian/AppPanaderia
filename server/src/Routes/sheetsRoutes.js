@@ -12,17 +12,12 @@ const {
   registerSaleDashboard,
   putSaleChangeState,
 } = require("../Controllers/sheets/sheetsController.js");
-const uploadToS3 = require("../Controllers/sheets/uploadImages.js");
 const {
   getSheetData,
   getSheetDataById,
   appendRow,
   updateRow,
   deleteRowById,
-  getProductsByCategory,
-  getAllCategories,
-  getAllColors,
-  getProductsByColor,
 } = require("../Controllers/sheets/productController.js");
 
 sheetsRouter.get("/data", async (req, res) => {
@@ -95,10 +90,6 @@ sheetsRouter.put("/product/:id", async (req, res) => {
   }
 });
 
-sheetsRouter.post("/images", (req, res) => {
-  uploadToS3(req, res);
-});
-
 sheetsRouter.get("/sale", async (req, res) => {
   try {
     const auth = await authorize();
@@ -153,19 +144,6 @@ sheetsRouter.post("/sale/dashboard", async (req, res) => {
   }
 });
 
-sheetsRouter.post("/sale", async (req, res) => {
-  try {
-    const data = req.body;
-    // console.log(data)
-    const auth = await authorize();
-    const sale = await registerSale(auth, data);
-    res.json(sale);
-  } catch (error) {
-    // console.log({ error: error.message });
-    res.status(500).send(error.message);
-  }
-});
-
 sheetsRouter.get("/sales/:uid", async (req, res) => {
   try {
     const { uid } = req.params;
@@ -213,48 +191,6 @@ sheetsRouter.put("/decrease-stock", async (req, res) => {
     res.json(result);
   } catch (error) {
     res.status(500).send(error.message);
-  }
-});
-
-sheetsRouter.get("/filter/:category", async (req, res) => {
-  try {
-    const auth = await authorize();
-    const category = req.params.category;
-    const data = await getProductsByCategory(auth, category);
-    res.json(data);
-  } catch (error) {
-    res.status(404).send("Producto no encontrado");
-  }
-});
-
-sheetsRouter.get("/categories", async (req, res) => {
-  try {
-    const auth = await authorize();
-    const categories = await getAllCategories(auth);
-    res.json(categories);
-  } catch (error) {
-    res.status(500).send(error.message);
-  }
-});
-
-sheetsRouter.get("/colors", async (req, res) => {
-  try {
-    const auth = await authorize();
-    const colors = await getAllColors(auth);
-    res.json(colors);
-  } catch (error) {
-    res.status(500).send(error.message);
-  }
-});
-
-sheetsRouter.get("/filter/color/:color", async (req, res) => {
-  try {
-    const auth = await authorize();
-    const color = req.params.color;
-    const data = await getProductsByColor(auth, color);
-    res.json(data);
-  } catch (error) {
-    res.status(404).send("Producto no encontrado");
   }
 });
 

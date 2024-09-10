@@ -17,15 +17,10 @@ async function getSheetData(auth) {
     const products = rows.map((row) => {
       const product = {
         id: row[0],
-        categoria: row[1],
-        nombre: row[2],
-        color: row[3],
-        talle: row[4],
-        stock: parseInt(row[5]),
-        precio: parseInt(row[6]),
-        url: row[7],
-        sku: row[8],
-        publicado: row[9],
+        nombre: row[1],
+        stock: parseInt(row[2]),
+        precio: parseInt(row[3]),
+        publicado: row[4],
       };
 
       // Filtra las propiedades que no están vacías o undefined
@@ -54,15 +49,10 @@ async function getSheetDataById(id, auth) {
 
     const products = rows.map((row) => ({
       id: row[0],
-      categoria: row[1],
-      nombre: row[2],
-      color: row[3],
-      talle: row[4],
-      cantidad: row[5],
-      precio: row[6],
-      url: row[7],
-      sku: row[8],
-      publicado: row[9],
+      nombre: row[1],
+      stock: row[2],
+      precio: row[3],
+      publicado: row[4],
     }));
 
     const product = products.find((product) => product.id === id.toString());
@@ -78,32 +68,17 @@ async function getSheetDataById(id, auth) {
   }
 }
 
-function generateSKU(category, name, color, count) {
-  const categoryInitial = category.charAt(0).toLowerCase();
-  const nameInitial = name.charAt(0).toLowerCase();
-  const colorInitial = color.charAt(0).toLowerCase();
-  const skuNumber = String(count).padStart(4, "0");
-  return `${categoryInitial}-${nameInitial}-${colorInitial}-${skuNumber}`;
-}
-
 async function appendRow(auth, rowData) {
   const sheets = google.sheets({ version: "v4", auth });
   const { rows, lastId } = await getSheetData(auth);
   const newId = lastId + 1;
-  const { categoria, nombre, color, tamaño, cantidad, precio, url } = rowData;
-  const sku = generateSKU(categoria, nombre, color, newId);
-  const urlString = Array.isArray(url) ? url.join(", ") : url;
+  const { nombre, stock, precio } = rowData;
   const publicadoValue = "no"; // Nueva variable para el valor de publicado
   const newRow = [
     newId,
-    categoria,
     nombre,
-    color,
-    tamaño,
     stock,
     precio,
-    urlString,
-    sku,
     publicadoValue, // Usar la nueva variable aquí
   ];
   const res = await sheets.spreadsheets.values.append({
@@ -131,22 +106,12 @@ async function updateRow(auth, rowData) {
     throw new Error("ID no encontrado");
   }
 
-  // Convertir el array de URLs en una cadena, si es necesario
-  const urlString = Array.isArray(rowData.url)
-    ? rowData.url.join(", ")
-    : rowData.url;
-
   // Construir la fila actualizada con los datos de rowData
   const updatedRow = [
     rowData.id,
-    rowData.categoria,
     rowData.nombre,
-    rowData.color,
-    rowData.tamaño,
     rowData.cantidad,
     rowData.precio,
-    urlString,
-    rowData.sku,
     rowData.publicado,
   ];
 
@@ -212,129 +177,6 @@ async function deleteRowById(auth, id) {
   return res.data;
 }
 
-async function getProductsByCategory(auth, category) {
-  try {
-    const { products } = await getSheetData(auth);
-
-    // Normaliza y elimina espacios en blanco de la categoría recibida
-    const trimmedCategory = category
-      .trim()
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "");
-
-    // Filtra los productos basándose en la categoría normalizada y en el estado de publicación
-    const filteredProducts = products.filter((product) => {
-      return (
-        product.publicado === "si" &&
-        product.categoria
-          .trim()
-          .toLowerCase()
-          .normalize("NFD")
-          .replace(/[\u0300-\u036f]/g, "") === trimmedCategory
-      );
-    });
-
-    // Si no se encuentran productos, lanzar un error personalizado
-    if (filteredProducts.length === 0) {
-      throw new Error("Producto no encontrado");
-    }
-
-    return { products: filteredProducts };
-  } catch (error) {
-    console.log({ error: error.message });
-    throw new Error(error.message);
-  }
-}
-
-async function getAllCategories(auth) {
-  try {
-    const { products } = await getSheetData(auth);
-
-    // Filtra las categorías de los productos que están en publicado = "si"
-    const normalizedCategories = products
-      .filter((product) => product.publicado === "si")
-      .map((product) =>
-        product.categoria
-          .trim()
-          .toLowerCase()
-          .normalize("NFD")
-          .replace(/[\u0300-\u036f]/g, "")
-      );
-
-    const categories = [...new Set(normalizedCategories)];
-
-    return categories;
-  } catch (error) {
-    console.log({ error: error.message });
-    throw new Error(error.message);
-  }
-}
-
-async function getAllColors(auth) {
-  try {
-    const { products } = await getSheetData(auth);
-
-    console.log(products);
-
-    const colors = [
-      ...new Set(
-        products
-          .filter((product) => product.publicado === "si")
-          .flatMap((product) => {
-            const colorList = product.color
-              .trim()
-              .toLowerCase()
-              .normalize("NFD")
-              .replace(/[\u0300-\u036f]/g, "");
-
-            return colorList.includes(",") ? colorList.split(",") : [colorList];
-          })
-      ),
-    ];
-
-    return colors;
-  } catch (error) {
-    console.log({ error: error.message });
-    throw new Error(error.message);
-  }
-}
-
-async function getProductsByColor(auth, color) {
-  try {
-    const { products } = await getSheetData(auth);
-
-    const trimmedColor = color
-      .trim()
-      .toLowerCase()
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "");
-
-    const filteredProducts = products
-      .filter((product) => product.publicado === "si")
-      .filter((product) => {
-        const colorList = product.color
-          .trim()
-          .toLowerCase()
-          .normalize("NFD")
-          .replace(/[\u0300-\u036f]/g, "");
-
-        return colorList.includes(",")
-          ? colorList.split(",").includes(trimmedColor)
-          : colorList === trimmedColor;
-      });
-
-    if (filteredProducts.length === 0) {
-      throw new Error("Producto no encontrado");
-    }
-
-    return { products: filteredProducts };
-  } catch (error) {
-    console.log({ error: error.message });
-    throw new Error(error.message);
-  }
-}
-
 async function activeProductById(auth, id) {
   const sheets = google.sheets({ version: "v4", auth });
 
@@ -390,9 +232,5 @@ module.exports = {
   appendRow,
   updateRow,
   deleteRowById,
-  getProductsByCategory,
-  getAllCategories,
-  getAllColors,
-  getProductsByColor,
   activeProductById,
 };

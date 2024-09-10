@@ -58,12 +58,12 @@ export const getProductById = (id) => async (dispatch) => {
 export const addSheetRow = (rowData) => async (dispatch) => {
   const token = localStorage.getItem("authToken");
   try {
+    toast.loading("Creando producto");
     const res = await instance.post(`/api/sheets/data`, rowData, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
     });
-    toast.loading("Creando producto");
     if (res.status === 200) {
       toast.success("Creado exitosamente");
       dispatch({
@@ -134,33 +134,6 @@ export const publicProductById = (id) => async (dispatch) => {
   }
 };
 
-//UPLOAD IMAGE
-export const uploadImages = (formData) => async (dispatch) => {
-    try {
-      const response = await instance.post(`/api/sheets/images`, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-      if (response.status === 200) {
-        toast.success("Imagen cargada");
-        dispatch({ type: UPLOAD_IMAGES_SUCCESS, payload: response.data.links });
-      } else {
-        toast.error("No se pudo cargar la imagen");
-      }
-      setTimeout(() => {
-        toast.dismiss();
-      }, 2000);
-    } catch (error) {
-      console.error("Error uploading images:", error);
-      dispatch({
-        type: UPLOAD_IMAGES_FAILURE,
-        payload: "Error uploading images",
-      });
-    }
-  };
-  
-  export const clearImages = () => ({
-    type: CLEAR_IMAGES,
-  });
   
   export const renderCondition = (condition) => ({
     type: SET_CONDITION,
@@ -189,49 +162,9 @@ export const uploadImages = (formData) => async (dispatch) => {
     type: CLEAR_FILTER,
   });
 
-  export const clearColor = () => ({
-    type: CLEAR_COLOR,
-  });
+
   
-  export const getCategories = () => async (dispatch) => {
-    try {
-      const response = await instance.get("/api/sheets/categories");
-      const categories = response.data;
   
-      dispatch({ type: GET_CATEGORIES, payload: categories });
-    } catch (error) {
-      console.error("Error fetching categories:", error);
-    }
-  };
-  
-  export const getColors = () => async (dispatch) => {
-    try {
-      const response = await instance.get("/api/sheets/colors");
-      const colors = response.data;
-  
-      // Transformar el array de colores en un array de colores individuales
-      const separatedColors = colors.flatMap((color) =>
-        color.split(",").map((c) => c.trim())
-      );
-  
-      // Eliminar duplicados usando un Set
-      const uniqueColors = [...new Set(separatedColors)];
-      dispatch({ type: GET_COLORS, payload: uniqueColors });
-    } catch (error) {
-      console.error("Error fetching colors:", error);
-    }
-  };
-  
-  export const getProductsByColor = (color) => async (dispatch) => {
-    try {
-      const response = await instance.get(`/api/sheets/filter/color/${color}`);
-      const products = response.data.products;
-  
-      dispatch({ type: FILTER_COLOR, payload: products });
-    } catch (error) {
-      console.error("Error fetching products by color:", error);
-    }
-  };
 
   export const setVariable = (variable) => async (dispatch) => {
     try {

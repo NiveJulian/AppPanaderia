@@ -27,7 +27,7 @@ export function Layout({ children, isAuth }) {
   }
 
   return (
-    <div className="h-full w-full flex flex-col md:flex-row bg-beige relative">
+    <div className="h-full w-full flex flex-col md:flex-row bg-white relative">
       <div className="md:hidden flex items-center justify-between p-4 bg-beige w-full">
         <button
           onClick={() => setShowNav(!showNav)}
@@ -49,7 +49,7 @@ export function Layout({ children, isAuth }) {
       </div>
       <div
         id="sidebar"
-        className={`bg-secondary h-full md:h-auto flex px-3 w-full md:w-60 lg:w-60 overflow-x-hidden transition-transform duration-300 ease-in-out transform ${
+        className={`bg-gray-800 h-full md:h-auto flex px-3 w-full md:w-60 lg:w-60 overflow-x-hidden transition-transform duration-300 ease-in-out transform ${
           showNav ? "translate-x-0" : "-translate-x-full"
         } md:translate-x-0 fixed md:static z-40 top-0 left-0 md:w-auto max-w-full md:max-w-none`}
       >

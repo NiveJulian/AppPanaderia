@@ -1,6 +1,6 @@
 require("dotenv").config();
 const { google } = require("googleapis");
-const { getUserByEmail, getUser } = require("../user/userController");
+const { getUser } = require("../user/userController");
 const { getSheetData, getSheetDataById } = require("./productController");
 
 async function authorize() {
@@ -26,85 +26,6 @@ async function authorize() {
   } catch (error) {
     console.error("Error during authentication", error);
     throw error;
-  }
-}
-
-async function registerSale(auth, data) {
-  try {
-    const sheets = google.sheets({ version: "v4", auth });
-
-    const { productos, formaPago, tipoEnvio, medio } = data;
-
-    const { nombre, correo, provincia, direccion, celular, cp } = data.cliente;
-
-    // Obtener la última fila para determinar el ID más reciente
-    const response = await sheets.spreadsheets.values.get({
-      spreadsheetId: process.env.GOOGLE_SHEETS_ID,
-      range: "Ventas!A:A",
-    });
-
-    const rows = response.data.values;
-    let lastId = 0;
-
-    if (rows && rows.length > 1) {
-      lastId = rows.length - 1;
-    }
-
-    const newId = lastId + 1;
-    const currentDate = new Date().toLocaleDateString("es-AR").slice(0, 10);
-    const currentTime = new Date().toLocaleTimeString("es-AR", {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-    });
-
-    const user = await getUserByEmail(auth, correo);
-    const cliente = user ? user.uid : (nombreCliente = nombre);
-    const statePayment = medio === "Casa central" ? "Completada" : "Pendiente";
-
-    const ventaData = productos.map((prod) => [
-      newId,
-      prod.id,
-      cliente,
-      prod.sku,
-      prod.cantidad,
-      prod.talle,
-      prod.color,
-      prod.precio,
-      formaPago,
-      statePayment,
-      prod.cantidad * prod.precio,
-      currentDate,
-      currentTime, // Agregar la hora actual
-      tipoEnvio || "",
-      correo || "",
-      direccion || "",
-      provincia || "",
-      cp || "",
-      celular || "",
-      medio,
-    ]);
-
-    const res = await sheets.spreadsheets.values.append({
-      spreadsheetId: process.env.GOOGLE_SHEETS_ID,
-      range: "Ventas!A2:T",
-      valueInputOption: "RAW",
-      resource: {
-        values: ventaData,
-      },
-    });
-
-    for (const prod of productos) {
-      const amount = parseInt(prod.cantidad);
-      if (amount > 0) {
-        await decreaseStock(auth, prod.id, amount);
-      }
-    }
-
-    return { message: "Venta registrada exitosamente", data: res.data };
-  } catch (error) {
-    console.error("Error registrando la venta:", error);
-    throw new Error(`Error registrando la venta: ${error.message}`);
   }
 }
 
@@ -140,28 +61,18 @@ async function registerSaleDashboard(auth, data) {
       newId,
       prod.id,
       nombreCliente,
-      prod.sku,
       prod.cantidad,
-      prod.talle || "",
-      prod.color,
       prod.precio,
       formaPago,
       statePayment,
       prod.cantidad * prod.precio,
       currentDate,
       currentTime,
-      "",
-      "",
-      "",
-      "",
-      "",
-      "",
-      medio,
     ]);
 
     const res = await sheets.spreadsheets.values.append({
       spreadsheetId: process.env.GOOGLE_SHEETS_ID,
-      range: "Ventas!A2:T",
+      range: "Ventas!A2:J",
       valueInputOption: "RAW",
       resource: {
         values: ventaData,
@@ -189,39 +100,13 @@ async function getSaleDataUnitiInfo(auth, id) {
     // Obtener ventas
     const res = await sheets.spreadsheets.values.get({
       spreadsheetId: process.env.GOOGLE_SHEETS_ID,
-      range: "Ventas!A2:T",
+      range: "Ventas!A2:J",
     });
     const rows = res.data.values || [];
 
     // Obtener usuarios
     const users = await getUser(auth);
 
-    // Obtener pagos de Mercado Pago
-    const paymentsResponse = await sheets.spreadsheets.values.get({
-      spreadsheetId: process.env.GOOGLE_SHEETS_ID,
-      range: "PagosMp!A2:N", // Ajusta el rango según tu hoja de cálculo
-    });
-    const paymentRows = paymentsResponse.data.values || [];
-
-    // Crear un array de pagos de Mercado Pago
-    const paymentsMp = paymentRows.map((row) => ({
-      ventaId: row[0],
-      ordenId: row[1],
-      pagoId: row[2],
-      estado: row[3],
-      detalleEstado: row[4],
-      fecCreacion: row[5],
-      fecAprobado: row[6],
-      montoTotal: parseFloat(row[7]),
-      cuotas: parseInt(row[8]),
-      idPagador: row[9],
-      email: row[10],
-      dni: row[11],
-      nombre: row[12],
-      apellido: row[13],
-    }));
-
-    // Filtrar las ventas con el id correspondiente y mapear a objetos
     const sales = rows
       .filter((row) => row[0] === id.toString())
       .map((row) => {
@@ -235,42 +120,14 @@ async function getSaleDataUnitiInfo(auth, id) {
           idProducto: row[1],
           idCliente: clienteId,
           cliente: clienteNombre,
-          sku: row[3],
-          cantidad: parseInt(row[4]),
-          talle: row[5],
-          color: row[6],
-          subtotal: parseFloat(row[7]),
-          pago: row[8],
-          estadoPago: row[9],
-          total: parseFloat(row[10]),
-          fecha: row[11],
-          hora: row[12],
-          formaEnvio: row[13],
-          correo: row[14],
-          direccion: row[15],
-          provincia: row[16],
-          cp: row[17],
-          celular: row[18],
-          medio: row[19],
+          cantidad: parseInt(row[3]),
+          subtotal: parseFloat(row[4]),
+          pago: row[5],
+          estadoPago: row[6],
+          total: parseFloat(row[7]),
+          fecha: row[8],
+          hora: row[9],
         };
-
-        // Verificar si la forma de pago es Mercado Pago
-        if (row[8] === "Mercado Pago" || row[8] === "Mercadopago") {
-          // Buscar el pago relacionado en la tabla PagosMp
-          const paymentInfo = paymentsMp.find(
-            (payment) => payment.ventaId === id.toString()
-          );
-
-          // Si existe el pago, añadir la información al objeto saleData
-          if (paymentInfo) {
-            saleData.paymentInfo = paymentInfo.estado;
-            saleData.paymentOrdenId = paymentInfo.ordenId;
-            saleData.paymentPagoId = paymentInfo.pagoId;
-          } else {
-            // Si no existe un pago registrado, añadir un mensaje de que no existe actualmente
-            saleData.paymentInfo = "No existe pago";
-          }
-        }
 
         return saleData;
       });
@@ -289,7 +146,7 @@ async function getSaleData(auth) {
     // Obtener las ventas
     const res = await sheets.spreadsheets.values.get({
       spreadsheetId: process.env.GOOGLE_SHEETS_ID,
-      range: "Ventas!A2:T",
+      range: "Ventas!A2:J",
     });
     const rows = res.data.values || [];
 
@@ -306,24 +163,14 @@ async function getSaleData(auth) {
         id: row[0],
         idProducto: row[1],
         idCliente: row[2],
-        cliente: clienteNombre, // Reemplazar el ID del cliente con su nombre
-        sku: row[3],
-        cantidad: parseInt(row[4]),
-        talle: row[5],
-        color: row[6],
-        subtotal: parseFloat(row[7]),
-        pago: row[8],
-        estadoPago: row[9],
-        total: parseFloat(row[10]),
-        fecha: row[11],
-        hora: row[12],
-        formaEnvio: row[13],
-        correo: row[14],
-        direccion: row[15],
-        provincia: row[16],
-        cp: row[17],
-        celular: row[18],
-        medio: row[19],
+        cliente: clienteNombre,
+        cantidad: parseInt(row[3]),
+        subtotal: parseFloat(row[4]),
+        pago: row[5],
+        estadoPago: row[6],
+        total: parseFloat(row[7]),
+        fecha: row[8],
+        hora: row[9],
       };
     });
 
@@ -409,7 +256,7 @@ async function getSalesByDate(auth, date) {
     const sheets = google.sheets({ version: "v4", auth });
     const res = await sheets.spreadsheets.values.get({
       spreadsheetId: process.env.GOOGLE_SHEETS_ID,
-      range: "Ventas!A2:T", // Ajusta el rango según tu hoja de ventas
+      range: "Ventas!A2:J", // Ajusta el rango según tu hoja de ventas
     });
 
     const rows = res.data.values || [];
@@ -431,7 +278,7 @@ async function getSaleByUserId(auth, uid) {
     const sheets = google.sheets({ version: "v4", auth });
     const res = await sheets.spreadsheets.values.get({
       spreadsheetId: process.env.GOOGLE_SHEETS_ID,
-      range: "Ventas!A2:T", // Ajusta el rango según tu hoja de ventas
+      range: "Ventas!A2:J", // Ajusta el rango según tu hoja de ventas
     });
 
     const rows = res.data.values || [];
@@ -447,20 +294,13 @@ async function getSaleByUserId(auth, uid) {
           id: row[0],
           productId: row[1],
           clientId: row[2],
-          sku: row[3],
-          quantity: row[4],
-          size: row[5],
-          color: row[6],
-          price: row[7],
-          paymentMethod: row[8],
-          status: row[9],
-          totalPrice: row[10],
-          date: row[11],
-          time: row[12],
-          shippingType: row[13],
-          email: row[14],
-          address: row[15],
-          province: row[16],
+          quantity: row[3],
+          price: row[4],
+          paymentMethod: row[5],
+          status: row[6],
+          totalPrice: row[7],
+          date: row[8],
+          time: row[9],
           product, // Añadir la información del producto
         };
       })
@@ -677,7 +517,7 @@ async function getCashFlow(auth, date = null) {
     // 2. Obtener los datos de la hoja de ventas
     const resVentas = await sheets.spreadsheets.values.get({
       spreadsheetId: process.env.GOOGLE_SHEETS_ID,
-      range: "Ventas!A2:T", // Ajusta el rango según tus columnas
+      range: "Ventas!A2:J", // Ajusta el rango según tus columnas
     });
 
     const rowsVentas = resVentas.data.values || [];
@@ -865,7 +705,7 @@ async function appendRowPayment(auth, rowData) {
 
 module.exports = {
   authorize,
-  registerSale,
+  registerSaleDashboard,
   getSaleData,
   getSaleDataUnitiInfo,
   getSalesByDate,
@@ -876,6 +716,5 @@ module.exports = {
   addCashFlowEntry,
   appendRowPayment,
   getSaleByUserId,
-  registerSaleDashboard,
   putSaleChangeState,
 };

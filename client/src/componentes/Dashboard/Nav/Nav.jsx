@@ -9,10 +9,10 @@ export const Nav = ({ user, showNav }) => {
       }md:left-0 transition-all duration-300 ease-in-out md:relative fixed top-0 left-0 h-full md:h-auto bg-transparent z-30`}
     >
       <h1 className="font-bold font-serif text-4xl text-center md:hidden">
-        Z<span className="text-beige">.</span>
+        Z<span className="text-yellow-600">.</span>
       </h1>
       <h1 className="hidden md:block font-bold text-sm text-accent font-serif md:text-xl text-center">
-        Zeppelin<span className="text-beige">.</span>
+        Espiga de Oro<span className="text-yellow-600 text-3xl">.</span>
       </h1>
       <div id="profile" className="space-y-3">
         {user.picture ? (
@@ -33,8 +33,8 @@ export const Nav = ({ user, showNav }) => {
       </div>
       <div id="menu" className="flex flex-col w-full space-y-2">
         <Link
-          to={"/dashboard/dashboard"}
-          className="text-sm font-medium text-grey py-2 px-2 hover:bg-darkBrown hover:text-white rounded-md transition duration-150 ease-in-out"
+          to={"/dashboard"}
+          className="text-sm font-medium text-white py-2 px-2 hover:bg-darkBrown hover:text-white rounded-md transition duration-150 ease-in-out"
         >
           <svg
             className="w-6 h-6 fill-current inline-block"
@@ -48,7 +48,7 @@ export const Nav = ({ user, showNav }) => {
         </Link>
         {/* <Link
           to={"/dashboard/balance"}
-          className="text-sm font-medium text-grey py-2 px-2 hover:bg-darkBrown hover:text-white rounded-md transition duration-150 ease-in-out"
+          className="text-sm font-medium text-white py-2 px-2 hover:bg-darkBrown hover:text-white rounded-md transition duration-150 ease-in-out"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -69,7 +69,7 @@ export const Nav = ({ user, showNav }) => {
           <>
             <Link
               to={"/dashboard/products"}
-              className="text-sm font-medium text-grey py-2 px-2 hover:bg-darkBrown hover:text-white rounded-md transition duration-150 ease-in-out"
+              className="text-sm font-medium text-white py-2 px-2 hover:bg-darkBrown hover:text-white rounded-md transition duration-150 ease-in-out"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -88,7 +88,7 @@ export const Nav = ({ user, showNav }) => {
             </Link>
             <Link
               to={"/dashboard/sales"}
-              className="text-sm font-medium text-grey py-2 px-2 hover:bg-darkBrown hover:text-white rounded-md transition duration-150 ease-in-out"
+              className="text-sm font-medium text-white py-2 px-2 hover:bg-darkBrown hover:text-white rounded-md transition duration-150 ease-in-out"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -108,7 +108,7 @@ export const Nav = ({ user, showNav }) => {
 
             <Link
               to={"/dashboard/users"}
-              className="text-sm font-medium text-grey py-2 px-2 hover:bg-darkBrown hover:text-white rounded-md transition duration-150 ease-in-out"
+              className="text-sm font-medium text-white py-2 px-2 hover:bg-darkBrown hover:text-white rounded-md transition duration-150 ease-in-out"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -132,7 +132,7 @@ export const Nav = ({ user, showNav }) => {
         )}
         {/* <Link
           to={"/dashboard/support"}
-          className="text-sm font-medium text-grey py-2 px-2 hover:bg-darkBrown hover:text-white rounded-md transition duration-150 ease-in-out"
+          className="text-sm font-medium text-white py-2 px-2 hover:bg-darkBrown hover:text-white rounded-md transition duration-150 ease-in-out"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -151,7 +151,7 @@ export const Nav = ({ user, showNav }) => {
         </Link>
         <Link
           to={"/dashboard/pagepayment"}
-          className="text-sm font-medium text-grey py-2 px-2 hover:bg-darkBrown hover:text-white rounded-md transition duration-150 ease-in-out"
+          className="text-sm font-medium text-white py-2 px-2 hover:bg-darkBrown hover:text-white rounded-md transition duration-150 ease-in-out"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -170,7 +170,7 @@ export const Nav = ({ user, showNav }) => {
           <span className="">Pagos virtuales</span>
         </Link> */}
         <button
-          className="w-full text-sm font-medium text-grey py-2 px-2 hover:bg-darkBrown hover:text-white rounded-md transition duration-150 ease-in-out"
+          className="w-full text-sm font-medium text-white py-2 px-2 hover:bg-darkBrown hover:text-white rounded-md transition duration-150 ease-in-out"
           onClick={() => doSignOut()}
         >
           <svg

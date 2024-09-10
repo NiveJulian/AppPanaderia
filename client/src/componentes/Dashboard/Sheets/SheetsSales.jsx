@@ -73,9 +73,6 @@ const SheetsSales = ({ data, onViewSale, toggleDelete, changeState }) => {
                 <p>
                   <strong>Total:</strong> ${prod.total}
                 </p>
-                <p>
-                  <strong>Medio:</strong> {prod.medio}
-                </p>
               </div>
               <div className="flex justify-between items-center mt-4 w-full rounded-md p-1">
                 <div className="flex border border-gray-300 p-2 rounded-md bg-gray-200 gap-2 text-xs">

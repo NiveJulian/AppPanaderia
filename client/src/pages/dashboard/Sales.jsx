@@ -95,7 +95,7 @@ const Sales = () => {
       <div className="flex justify-between items-center">
         <h1 className="text-xl text-white">Ventas</h1>
       </div>
-      <div className="mt-8 h-full">
+      <div className="mt-8 h-screen">
         <div className="flex flex-row justify-center items-center mb-2">
           <div className="flex border border-gray-300 rounded-md text-white bg-gray-300 p-2 gap-2">
             <svg

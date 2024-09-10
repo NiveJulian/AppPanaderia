@@ -6,29 +6,14 @@ const validationProductForm = (formData) => {
     errors.nombre = "El nombre es requerido";
   }
 
-  // Validación de categoría
-  if (formData.categoria && !formData.categoria.trim()) {
-    errors.categoria = "La categoría es requerida";
-  }
-
-  // Validación de tamaño
-  if (formData.tamaño && !formData.tamaño.trim()) {
-    errors.tamaño = "El tamaño es requerido";
-  }
-
   // Validación de cantidad
   if (formData.stock && !formData.stock.trim()) {
     errors.stock = "La cantidad es requerida";
   }
 
-  // Validación de color
-  if (formData.color && !formData.color.trim()) {
-    errors.color = "El color es requerido";
-  }
-
   // Asegúrate de que formData.precio sea una cadena
-  const precioString = formData.precio ? formData.precio.toString() : '';
-  const sanitizedPrice = precioString.replace(/,/g, '');
+  const precioString = formData.precio ? formData.precio.toString() : "";
+  const sanitizedPrice = precioString.replace(/,/g, "");
 
   if (formData.precio && !sanitizedPrice) {
     errors.precio = "El precio es requerido";

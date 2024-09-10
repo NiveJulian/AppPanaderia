@@ -1,5 +1,3 @@
-import { LazyLoadImage } from "react-lazy-load-image-component";
-
 const SheetsData = ({
   data,
   toggleModal,
@@ -8,30 +6,21 @@ const SheetsData = ({
 }) => {
   return (
     <div className="border border-gray-300 p-4">
-      
       <div className="overflow-x-auto custom-scroll border border-gray-300 p-2">
         <table className="basic mt-2">
           <thead>
             <tr className="border border-gray-500">
               <th>ID</th>
-              <th>Categoría</th>
               <th>Nombre</th>
-              <th>Color</th>
-              <th>Talle</th>
               <th>Stock</th>
               <th>Precio</th>
-              <th>Imagen</th>
-              <th>SKU</th>
               <th>Acciones</th>
             </tr>
           </thead>
           <tbody className="text-center border border-gray-500">
             {data?.length > 0 ? (
-              data.map((row, index) => {
-                const imgUrl = row?.url?.split(", ");
-
-                const rowClass =
-                  row.stock === 0 ? "bg-red-500 text-white" : "";
+              data?.map((row, index) => {
+                const rowClass = row.stock === 0 ? "bg-red-500 text-white" : "";
                 const rowClassWarning =
                   row.stock > 0 && row.stock < 2
                     ? "bg-yellow-100 text-gray-800"
@@ -43,31 +32,9 @@ const SheetsData = ({
                     className={`border border-gray-600 ${rowClass} ${rowClassWarning}`}
                   >
                     <td>{row.id}</td>
-                    <td>{row.categoria}</td>
                     <td>{row.nombre}</td>
-                    <td>{row.color}</td>
-                    <td>{row.talle}</td>
                     <td>{row.stock}</td>
                     <td>{row.precio}</td>
-                    <td className="flex">
-                      {imgUrl?.length > 1 ? (
-                        imgUrl?.map((url, imgIndex) => (
-                          <LazyLoadImage
-                            key={imgIndex}
-                            src={url}
-                            alt={`Imagen ${index}-${imgIndex}`}
-                            className="w-16 h-16 rounded-full mr-[-36px] object-cover mb-2"
-                          />
-                        ))
-                      ) : (
-                        <LazyLoadImage
-                          src={row?.url}
-                          alt={`Imagen ${row?.url}-${index}`}
-                          className="w-16 h-16 rounded-full mr-[-36px] object-cover mb-2"
-                        />
-                      )}
-                    </td>
-                    <td>{row.sku}</td>
                     <td className="gap-2">
                       <button
                         title="Editar"
@@ -109,51 +76,6 @@ const SheetsData = ({
                           />
                         </svg>
                       </button>
-                      {row.cantidad !== 0 ? (
-                        <button
-                          title="Publicar en la pagina"
-                          className={`${
-                            row.publicado === "si"
-                              ? "text-blue-500"
-                              : "text-gray-800"
-                          }`}
-                          onClick={() => toggleActiveModal(row.id)}
-                        >
-                          {row.publicado === "si" ? (
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              strokeWidth="1.5"
-                              stroke="currentColor"
-                              className="size-6"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M12 16.5V9.75m0 0 3 3m-3-3-3 3M6.75 19.5a4.5 4.5 0 0 1-1.41-8.775 5.25 5.25 0 0 1 10.233-2.33 3 3 0 0 1 3.758 3.848A3.752 3.752 0 0 1 18 19.5H6.75Z"
-                              />
-                            </svg>
-                          ) : (
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              strokeWidth="1.5"
-                              stroke="currentColor"
-                              className="size-6"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M12 9.75v6.75m0 0-3-3m3 3 3-3m-8.25 6a4.5 4.5 0 0 1-1.41-8.775 5.25 5.25 0 0 1 10.233-2.33 3 3 0 0 1 3.758 3.848A3.752 3.752 0 0 1 18 19.5H6.75Z"
-                              />
-                            </svg>
-                          )}
-                        </button>
-                      ) : (
-                        ""
-                      )}
                     </td>
                   </tr>
                 );

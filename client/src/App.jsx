@@ -13,18 +13,7 @@ import Support from "./pages/dashboard/Support";
 import Users from "./pages/dashboard/Users";
 import Error from "./pages/dashboard/Error";
 import Balance from "./pages/dashboard/Balance";
-import Register from "./pages/dashboard/Register";
-// import Home from "./pages/ecommerce/Home";
-// import CartPage from "./pages/ecommerce/CartPage";
-// import ProductDetail from "./pages/ecommerce/ProductDetail";
-// import AllProducts from "./pages/ecommerce/AllProducts";
-// import SuccessPayment from "./pages/ecommerce/Payment/SuccessPayment";
-// import FailurePayment from "./pages/ecommerce/Payment/FailurePayment";
-// import PendingPayment from "./pages/ecommerce/Payment/PendingPayment";
-// import HowCanBuy from "./pages/ecommerce/HowCanBuy";
-// import Purchase from "./pages/ecommerce/Purchase";
 import PagePayment from "./pages/dashboard/PagePayment";
-import { getCategories } from "./redux/actions/productActions";
 
 
 function App() {
@@ -32,7 +21,6 @@ function App() {
   const isAuth = useSelector((state) => state.auth.isAuth);
 
   useEffect(() => {
-    dispatch(getCategories());
     dispatch(authenticateUserFromSession());
   }, [dispatch]);
   return (
@@ -59,26 +47,16 @@ function App() {
       />
       <Routes>
         <Route path="/" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        {/* <Route path="/" element={<Home />} />
-        <Route path="/cart" element={<CartPage />} />
-        <Route path="/howcanbuy" element={<HowCanBuy />} />
-        <Route path="/userpurchase/:id" element={<Purchase />} />
-        <Route path="/product" element={<AllProducts />} />
-        <Route path="/product/:id" element={<ProductDetail />} />
-        <Route path="/success" element={<SuccessPayment />} />
-        <Route path="/failure" element={<FailurePayment />} />
-        <Route path="/pending" element={<PendingPayment />} /> */}
         {isAuth ? (
-          <>
-            <Route path="/dashboard/dashboard" element={<Dashboard />} />
+          <Route>
+            <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/dashboard/products" element={<Products />} />
             <Route path="/dashboard/sales" element={<Sales />} />
             <Route path="/dashboard/users" element={<Users />} />
             <Route path="/dashboard/balance" element={<Balance />} />
             <Route path="/dashboard/support" element={<Support />} />
             <Route path="/dashboard/pagepayment" element={<PagePayment />} />
-          </>
+          </Route>
         ) : (
           <Route path="/error" element={<Error />} />
         )}

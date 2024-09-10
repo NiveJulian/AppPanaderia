@@ -80,10 +80,7 @@ const DisplayProductDashboard = ({ products }) => {
     const venta = {
       productos: cartItems.map((prod) => ({
         id: prod.id,
-        sku: prod.sku,
         nombre: prod.nombre,
-        talle: prod.talle,
-        color: prod.color,
         precio: prod.precio,
         cantidad: prod.cantidad,
       })),
@@ -128,14 +125,9 @@ const DisplayProductDashboard = ({ products }) => {
       if (available > 0) {
         const data = {
           id: product.id,
-          categoria: product.categoria,
           nombre: product.nombre,
-          color: product.color,
-          talle: product.talle,
           cantidad: 1,
           precio: product.precio,
-          imagen: product.url,
-          sku: product.sku,
         };
         dispatch(addToCart(data));
         toast.success("Se agregó al carrito");
@@ -178,10 +170,7 @@ const DisplayProductDashboard = ({ products }) => {
 
   const filteredProducts = products.filter((product) => {
     const lowerCaseSearchTerm = searchTerm?.toLowerCase();
-    return (
-      product?.nombre?.toLowerCase().includes(lowerCaseSearchTerm) ||
-      product?.sku?.toLowerCase().includes(lowerCaseSearchTerm)
-    );
+    return product?.nombre?.toLowerCase().includes(lowerCaseSearchTerm);
   });
 
   return (
@@ -198,12 +187,8 @@ const DisplayProductDashboard = ({ products }) => {
             <div className="flex flex-row justify-between items-center px-4 mt-5">
               <div className="text-gray-800">
                 <div className="font-bold font-serif text-xl flex gap-2 justify-center items-center">
-                  <img
-                    src="../zeppelinstore.webp"
-                    className="w-12 h-12 rounded-full"
-                    alt=""
-                  />
-                  Zeppelin Store
+                  <span className="w-12 h-12 rounded-full bg-yellow-600"></span>
+                  Espiga de Oro
                 </div>
                 <span className="text-xs">Location ID#PDL008</span>
               </div>
@@ -237,28 +222,12 @@ const DisplayProductDashboard = ({ products }) => {
             <div className="grid grid-cols-3 px-3 py-3 gap-4 mt-5 overflow-y-auto h-auto">
               {filteredProducts &&
                 filteredProducts.map((product, i) => {
-                  const imageUrls = product.url?.split(", ");
                   return (
                     <button
                       key={i}
                       onClick={() => handleAddToCart(product)}
-                      className="flex border cursor-pointer shadow-md rounded-md p-2 flex-col items-center justify-center w-full mx-auto hover:shadow-xl active:shadow-lg active:translate-y-[2px]"
+                      className="flex h-32 border cursor-pointer shadow-md rounded-md p-2 flex-col items-center justify-center w-full mx-auto hover:shadow-xl active:shadow-lg active:translate-y-[2px]"
                     >
-                      {imageUrls?.length > 1 ? (
-                        <div className="flex">
-                          <LazyLoadImage
-                            className="object-cover w-full rounded-md h-16 xl:h-32"
-                            src={imageUrls[0]}
-                            alt={`${product.nombre}`}
-                          />
-                        </div>
-                      ) : (
-                        <LazyLoadImage
-                          className="object-cover w-full rounded-md h-16 xl:h-32"
-                          src={product.url}
-                          alt={`${product.nombre}-1`}
-                        />
-                      )}
                       <h4 className="mt-2 text-sm font-medium text-primary">
                         {product.nombre}
                       </h4>

@@ -2,29 +2,28 @@ const { Router } = require("express");
 const sheetsRouter = Router();
 const {
   authorize,
-  getSheetData,
-  appendRow,
-  updateRow,
-  registerSale,
-  getSaleData,
-  getSaleDataUnitiInfo,
-  deleteRowById,
   increaseStock,
   decreaseStock,
-  getProductsByCategory,
-  getAllCategories,
   deleteSalesById,
+  getSaleData,
   getCashFlow,
   addCashFlowEntry,
-  getSheetDataById,
-  getAllColors,
-  getProductsByColor,
-  activeProductById,
   getSaleByUserId,
   registerSaleDashboard,
   putSaleChangeState,
 } = require("../Controllers/sheets/sheetsController.js");
 const uploadToS3 = require("../Controllers/sheets/uploadImages.js");
+const {
+  getSheetData,
+  getSheetDataById,
+  appendRow,
+  updateRow,
+  deleteRowById,
+  getProductsByCategory,
+  getAllCategories,
+  getAllColors,
+  getProductsByColor,
+} = require("../Controllers/sheets/productController.js");
 
 sheetsRouter.get("/data", async (req, res) => {
   try {
@@ -106,6 +105,7 @@ sheetsRouter.get("/sale", async (req, res) => {
     const sale = await getSaleData(auth);
     res.json(sale.salesData);
   } catch (error) {
+    console.log({errorSale: error.message})
     res.status(500).send(error.message);
   }
 });

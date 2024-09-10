@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 
-const colors = ["bg-pink-500", "bg-secondary", "bg-tertiary"];
+const colors = ["bg-beige", "bg-secondary", "bg-tertiary"];
 
 const CarrouselHome = () => {
   const [currentIndex, setCurrentIndex] = useState(0);

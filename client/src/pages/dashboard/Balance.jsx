@@ -47,7 +47,7 @@ const Balance = () => {
   return (
     <Layout isAuth={isAuth}>
       <div className="flex justify-between">
-        <h1 className="text-xl text-gray-500">Balance</h1>
+        <h1 className="text-xl text-white">Balance</h1>
       </div>
 
       <div className="mt-4 flex">

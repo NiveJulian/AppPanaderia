@@ -75,7 +75,7 @@ const PagePayment = () => {
   return (
     <Layout isAuth={isAuth}>
       <div className="flex justify-between">
-        <h1 className="text-xl text-gray-500">
+        <h1 className="text-xl text-white">
           Control de pagos desde la pagina
         </h1>
       </div>
@@ -108,7 +108,7 @@ const PagePayment = () => {
           <button
             onClick={() => handlePageChange(currentPage - 1)}
             disabled={currentPage === 1}
-            className="px-4 py-2 mx-1 bg-pink-400 text-white border border-gray-400 rounded-md disabled:opacity-50"
+            className="px-4 py-2 mx-1 bg-beige text-white border border-gray-400 rounded-md disabled:opacity-50"
           >
             Anterior
           </button>
@@ -126,7 +126,7 @@ const PagePayment = () => {
           <button
             onClick={() => handlePageChange(currentPage + 1)}
             disabled={currentPage === totalPages}
-            className="px-4 py-2 mx-1 bg-pink-400 text-white border border-gray-400 rounded-md disabled:opacity-50"
+            className="px-4 py-2 mx-1 bg-beige text-white border border-gray-400 rounded-md disabled:opacity-50"
           >
             Siguiente
           </button>

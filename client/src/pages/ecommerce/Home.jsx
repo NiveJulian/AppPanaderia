@@ -27,7 +27,7 @@ const Home = () => {
   }, [dispatch]);
 
   return (
-    <div className="w-full shadow-md bg-pink-100">
+    <div className="w-full shadow-md bg-beige">
       <Navigation isCart={false} />
       <WhatsAppBubble />
       <div
@@ -41,16 +41,16 @@ const Home = () => {
         <Carrousel />
       </div>
       <div
-        className={`relative -top-18 md:-top-28 flex w-full justify-center items-center transition-transform duration-1000 bg-pink-100`}
+        className={`relative -top-18 md:-top-28 flex w-full justify-center items-center transition-transform duration-1000 bg-beige`}
       >
           <ProdustHome allProducts={sheetsData} />
       </div>
       <div
         ref={refProducts}
-        className={`flex w-full justify-center items-center transition-transform duration-1000 bg-pink-100`}
+        className={`flex w-full justify-center items-center transition-transform duration-1000 bg-beige`}
       >
         <Link
-          className="flex flex-col justify-center items-center shadow-lg hover:bg-pink-50 hover:animate-pulse bg-gray-100 border border-gray-500 p-4 w-full rounded-lg mx-4"
+          className="flex flex-col justify-center items-center shadow-lg hover:bg-beige hover:animate-pulse bg-gray-100 border border-gray-500 p-4 w-full rounded-lg mx-4"
           to={"https://www.instagram.com/ninashowroomza/"}
         >
           <svg
@@ -78,7 +78,7 @@ const Home = () => {
         </Link>
       </div>
       <div
-        className={`flex w-full justify-center items-center transition-transform duration-1000 bg-pink-100 `}
+        className={`flex w-full justify-center items-center transition-transform duration-1000 bg-beige`}
       >
         <Features />
       </div>

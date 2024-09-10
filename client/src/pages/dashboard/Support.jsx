@@ -8,7 +8,7 @@ const Support = () => {
 
   return (
     <Layout isAuth={isAuth}>
-      <h1 className="text-xl text-gray-400">Soporte de desarrollo</h1>
+      <h1 className="text-xl text-white">Soporte de desarrollo</h1>
       <div className="mt-8 h-screen max-md:h-full">
         <SupportDevelopers />
       </div>

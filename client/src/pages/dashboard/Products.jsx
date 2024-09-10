@@ -119,7 +119,7 @@ const Products = () => {
         />
       )}
       <div className="flex justify-between">
-        <h1 className="text-xl text-gray-500">Productos</h1>
+        <h1 className="text-xl text-white">Productos</h1>
         <button
           onClick={() => toggleModal()}
           className="p-2 border border-secondary bg-secondary text-white rounded-md hover:bg-primary hover:text-white active:translate-y-[2px] shadow-sm hover:shadow-md"
@@ -147,7 +147,7 @@ const Products = () => {
           <button
             onClick={() => handlePageChange(currentPage - 1)}
             disabled={currentPage === 1}
-            className="px-4 py-2 mx-1 bg-pink-400 text-white border border-gray-400 rounded-md disabled:opacity-50"
+            className="px-4 py-2 mx-1 bg-beige text-white border border-gray-400 rounded-md disabled:opacity-50"
           >
             Anterior
           </button>
@@ -165,7 +165,7 @@ const Products = () => {
           <button
             onClick={() => handlePageChange(currentPage + 1)}
             disabled={currentPage === totalPages}
-            className="px-4 py-2 mx-1 bg-pink-400 text-white border border-gray-400 rounded-md disabled:opacity-50"
+            className="px-4 py-2 mx-1 bg-beige text-white border border-gray-400 rounded-md disabled:opacity-50"
           >
             Siguiente
           </button>

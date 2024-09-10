@@ -37,7 +37,7 @@ export const FormRegister = () => {
       </div>
       <div className="flex justify-center items-center text-center mt-2">
         <label
-          className="p-2 border border-gray-300 bg-pink-500 text-white rounded-l-md"
+          className="p-2 border border-gray-300 bg-beige text-white rounded-l-md"
           htmlFor="name"
         >
           Nombre
@@ -54,7 +54,7 @@ export const FormRegister = () => {
       </div>
       <div className="flex justify-center items-center text-center mt-2">
         <label
-          className="p-2 border border-gray-300 bg-pink-500 text-white rounded-l-md"
+          className="p-2 border border-gray-300 bg-beige text-white rounded-l-md"
           htmlFor="email"
         >
           Correo
@@ -72,7 +72,7 @@ export const FormRegister = () => {
       <div className="flex flex-row text-center mt-2 gap-2">
         <div className="flex justify-center items-center">
           <label
-            className="p-2 border border-gray-300 bg-pink-500 text-white rounded-l-md"
+            className="p-2 border border-gray-300 bg-beige text-white rounded-l-md"
             htmlFor="state"
           >
             Provincia
@@ -89,7 +89,7 @@ export const FormRegister = () => {
         </div>
         <div className="flex justify-center items-center">
           <label
-            className="p-2 border border-gray-300 bg-pink-500 text-white rounded-l-md"
+            className="p-2 border border-gray-300 bg-beige text-white rounded-l-md"
             htmlFor="postalCode"
           >
             CP
@@ -107,7 +107,7 @@ export const FormRegister = () => {
       </div>
       <div className="flex justify-center items-center text-center mt-2">
         <label
-          className="p-2 border border-gray-300 bg-pink-500 text-white rounded-l-md"
+          className="p-2 border border-gray-300 bg-beige text-white rounded-l-md"
           htmlFor="address"
         >
           Direccion
@@ -124,7 +124,7 @@ export const FormRegister = () => {
       </div>
       <div className="flex justify-center items-center text-center mt-2">
         <label
-          className="p-2 border border-gray-300 bg-pink-500 text-white rounded-l-md"
+          className="p-2 border border-gray-300 bg-beige text-white rounded-l-md"
           htmlFor="password"
         >
           Password

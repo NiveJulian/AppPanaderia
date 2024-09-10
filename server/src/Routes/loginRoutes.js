@@ -8,6 +8,10 @@ const {
   getUserByEmail,
   createUser,
 } = require("../Controllers/user/userController");
+const {
+  getTokenFromCode,
+  generateAuthUrl,
+} = require("../Controllers/login/authController");
 const { authorize } = require("../Controllers/sheets/sheetsController");
 
 loginRoutes.post("/third", async (req, res) => {
@@ -15,7 +19,6 @@ loginRoutes.post("/third", async (req, res) => {
     const { token } = req.body;
     const decodedToken = await verifyToken(token);
     const email = decodedToken.email;
-
     // Configura el cliente de autenticación de Google
     const authClient = await authorize();
 
@@ -31,7 +34,6 @@ loginRoutes.post("/third", async (req, res) => {
       });
     }
 
-    // Asigna el rol basado en la verificación de admin o vendedor
     if (await isAdmin(email)) {
       userData.rol = "admin";
     } else if (await isSeller(authClient, email)) {
@@ -43,7 +45,7 @@ loginRoutes.post("/third", async (req, res) => {
       theUser: userData,
     });
   } catch (error) {
-    console.log({ error: error.message });
+    console.log({ errorThirdRoute: error.message });
     res
       .status(500)
       .json({ message: "Authentication failed", error: error.message });
@@ -72,6 +74,31 @@ loginRoutes.post("/email", async (req, res) => {
     res
       .status(401)
       .json({ message: "Authentication failed", error: error.message });
+  }
+});
+
+loginRoutes.get("/oauthcallback", async (req, res) => {
+  const code = req.query.code; // Obtener el código de autorización de la query
+  console.log("Authorization code received:", code);
+
+  if (!code) {
+    return res.status(400).json({ error: "Missing authorization code" });
+  }
+
+  try {
+    // Intercambiar el código de autorización por tokens
+    const tokens = await getTokenFromCode(code);
+
+    console.log("Tokens almacenados con éxito:", tokens);
+
+    // Redirigir o responder al cliente que la autenticación fue exitosa
+    res.status(200).json({
+      message: "Authorization successful",
+      tokens,
+    });
+  } catch (error) {
+    console.error("Error durante el callback de OAuth:", error);
+    res.status(500).json({ error: "Failed to authenticate" });
   }
 });
 

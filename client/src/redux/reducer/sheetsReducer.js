@@ -19,7 +19,7 @@ import {
   FILTER_COLOR,
   SET_VARIABLE,
   SEARCH_PRODUCT,
-  CLEAN_SEARCH_PRODUCT
+  CLEAN_SEARCH_PRODUCT,
 } from "../actions/productActions";
 
 const initialState = {
@@ -91,7 +91,7 @@ const sheetsReducer = (state = initialState, action) => {
       return { ...state, rCondition: action.payload };
 
     case SET_VARIABLE:
-      return { ...state, filterVar: action.payload };  
+      return { ...state, filterVar: action.payload };
 
     case FILTER_CATEGORY: // Productos filtrados por categoria
       return {
@@ -103,7 +103,7 @@ const sheetsReducer = (state = initialState, action) => {
       return {
         ...state,
         filterColors: [],
-      };  
+      };
 
     case CLEAR_FILTER:
       return { ...state, filterProducts: [] };
@@ -124,23 +124,23 @@ const sheetsReducer = (state = initialState, action) => {
         ...state,
         filterColors: action.payload,
       };
-      case SEARCH_PRODUCT:
-  const searchTerm = action.payload.toLowerCase();
+    case SEARCH_PRODUCT:
+      const searchTerm = action.payload.toLowerCase();
 
-  // Verifica que item.nombre exista y no sea undefined
-  const searchedProducts = state.sheetsData.filter(item =>
-    item.nombre && item.nombre.toLowerCase().includes(searchTerm)
-  );
+      // Verifica que item.nombre exista y no sea undefined
+      const searchedProducts = state.sheetsData.filter(
+        (item) => item.nombre && item.nombre.toLowerCase().includes(searchTerm)
+      );
 
-  return {
-    ...state,
-    searchedProducts
-  };
+      return {
+        ...state,
+        searchedProducts,
+      };
     case CLEAN_SEARCH_PRODUCT:
       return {
         ...state,
-        searchedProducts: []
-      }    
+        searchedProducts: [],
+      };
 
     case GET_CASH_FLOW:
       return {

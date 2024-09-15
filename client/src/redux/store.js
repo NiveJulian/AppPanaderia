@@ -5,6 +5,7 @@ import sheetsReducer from "./reducer/sheetsReducer";
 import cartReducer from "./reducer/cartReducer";
 import userReducer from "./reducer/userReducer";
 import paymentReducer from "./reducer/paymentReducer";
+import clientReducer from "./reducer/clientReducer";
 
 const composeEnhancer = window._REDUX_DEVTOOLS_EXTENSION_COMPOSE__ || compose;
 
@@ -14,6 +15,7 @@ const rootReducer = combineReducers({
   cart: cartReducer,
   user: userReducer,
   payment: paymentReducer,
+  client: clientReducer
 });
 
 const store = createStore(rootReducer, composeEnhancer(applyMiddleware(thunk)));

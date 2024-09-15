@@ -1,9 +1,7 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import toast from "react-hot-toast";
-import { LazyLoadImage } from "react-lazy-load-image-component";
-import Filter from "../Filter/Filter";
 import { createSaleDashboard } from "../../../redux/actions/salesActions";
 import {
   addToCart,
@@ -12,67 +10,31 @@ import {
   incrementQuantity,
   removeFromCart,
 } from "../../../redux/actions/cartActions";
-import Loader from "../../Ecommerce/Loader/Loader";
+import Loader from "../../Loader/Loader";
 
-const DisplayProductDashboard = ({ products }) => {
+const DisplayProductDashboard = ({ products, client }) => {
   const cartItems = useSelector((state) => state.cart.cartItems);
-  const [formaPago, setFormaPago] = useState("");
-  const [nombreCliente, setNombreCliente] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
-  const [loading, setLoading] = useState(false); // Estado para el loader
+  const [loading, setLoading] = useState(false);
+  const { id } = useParams();
   const dispatch = useDispatch();
-
   const calculateTotal = () => {
     const total = cartItems.reduce((acc, product) => {
       const precio = parseInt(product.precio);
       const quantity = product.cantidad || 1;
       return acc + (isNaN(precio) ? 0 : precio * quantity);
     }, 0);
-    let recargo7;
-    let totalConRecargo7;
-    let recargo12;
     let totalFinal = total;
-    switch (formaPago) {
-      case "qr":
-        totalFinal += total * 0.07;
-        break;
-      case "tarjetaDebito":
-        totalFinal += total * 0.07;
-        break;
-      case "tarjetaCredito":
-        recargo7 = total * 0.07;
-        totalConRecargo7 = total + recargo7;
-        recargo12 = totalConRecargo7 * 0.12;
-        totalFinal = totalConRecargo7 + recargo12;
-        break;
-      default:
-        break;
-    }
 
     return totalFinal.toFixed(2);
   };
 
-  const handleFormaPagoChange = (e) => {
-    setFormaPago(e.target.value);
-  };
-
-  const handleNombreClienteChange = (e) => {
-    setNombreCliente(e.target.value);
-  };
-
   const handleCreateVenta = () => {
     // Validaciones
-    if (formaPago === "") {
-      toast.error("Falta forma de pago");
-      return;
-    } else if (cartItems.length === 0) {
+    if (cartItems.length === 0) {
       toast.error("El carrito está vacío");
       return;
-    } else if (nombreCliente.trim() === "") {
-      toast.error("Falta nombre del cliente");
-      return;
     }
-
     // Activar el loader
     setLoading(true);
 
@@ -84,13 +46,9 @@ const DisplayProductDashboard = ({ products }) => {
         precio: prod.precio,
         cantidad: prod.cantidad,
       })),
+      idCliente: id,
       total: calculateTotal(),
-      formaPago,
-      nombreCliente,
-      medio: "Casa central",
     };
-
-    // Despachar la creación de la venta
     dispatch(createSaleDashboard(venta))
       .then(() => {
         // Mostrar mensaje de éxito
@@ -188,9 +146,9 @@ const DisplayProductDashboard = ({ products }) => {
               <div className="text-gray-800">
                 <div className="font-bold font-serif text-xl flex gap-2 justify-center items-center">
                   <span className="w-12 h-12 rounded-full bg-yellow-600"></span>
-                  Espiga de Oro
+                  Entrega a <span className="uppercase p-1 border border-gray-300 rounded-md text-white bg-yellow-600">{client?.nombre}</span>
                 </div>
-                <span className="text-xs">Location ID#PDL008</span>
+                <span className="text-xs">Location ID#PDL009</span>
               </div>
               <div className="flex items-center">
                 <div className="text-sm text-center mr-4">
@@ -206,9 +164,6 @@ const DisplayProductDashboard = ({ products }) => {
                   </Link>
                 </div>
               </div>
-            </div>
-            <div className="mt-5 px-5">
-              <Filter />
             </div>
             <div className="mt-5 px-5">
               <input
@@ -258,8 +213,7 @@ const DisplayProductDashboard = ({ products }) => {
             <div className="px-5 py-4 mt-5 overflow-y-auto h-64">
               {cartItems?.length > 0
                 ? cartItems?.map((item, i) => {
-                    const imgUrl = item?.imagen?.split(",");
-                    const product = products.find((p) => p.id === item.id);
+                    const product = products?.find((p) => p.id === item.id);
                     const availableStock = product ? product.stock : 0;
                     return (
                       <div
@@ -267,11 +221,6 @@ const DisplayProductDashboard = ({ products }) => {
                         className="flex flex-row justify-between items-center mb-4"
                       >
                         <div className="flex flex-row items-center w-2/5">
-                          <LazyLoadImage
-                            src={imgUrl}
-                            className="w-12 h-12 object-cover rounded-md"
-                            alt={`${item.nombre}-${i}`}
-                          />
                           <span className="ml-4 font-semibold text-sm text-primary text-center">
                             {item?.nombre}
                           </span>
@@ -316,31 +265,7 @@ const DisplayProductDashboard = ({ products }) => {
                 : null}
             </div>
             {/* Formulario */}
-            <div className="px-5">
-              <input
-                type="text"
-                value={nombreCliente}
-                onChange={handleNombreClienteChange}
-                placeholder="Nombre del cliente"
-                className="border p-2 rounded-md w-full border-gray-400 mb-4"
-              />
-              <select
-                value={formaPago}
-                onChange={handleFormaPagoChange}
-                className="border p-2 rounded-md w-full border-gray-400"
-              >
-                <option value="">Seleccione forma de pago</option>
-                <option value="efectivo">Efectivo</option>
-                <option value="transferencia">transferencia</option>
-                <option value="qr">QR (7% recargo)</option>
-                <option value="tarjetaDebito">
-                  Tarjeta de Débito (7% recargo)
-                </option>
-                <option value="tarjetaCredito">
-                  Tarjeta de Crédito (12% recargo)
-                </option>
-              </select>
-            </div>
+            <div className="px-5"></div>
             <div className="flex flex-row justify-between items-center px-5 mt-10">
               <div>
                 <div className="text-sm text-gray-500">Total</div>

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import Loader from "../../Ecommerce/Loader/Loader";
+import Loader from "../../Loader/Loader";
 
 const TabViewSale = ({ isOpen, onClose, sale, loading }) => {
   const [expandedItems, setExpandedItems] = useState({});

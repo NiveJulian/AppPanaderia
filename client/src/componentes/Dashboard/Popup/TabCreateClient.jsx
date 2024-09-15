@@ -1,22 +1,19 @@
 import { useState, useEffect, useMemo } from "react";
 import { useDispatch } from "react-redux";
-import validationProductForm from "./validationClienteForm";
 import toast from "react-hot-toast";
-import {
-  addSheetRow,
-  updateRow,
-} from "../../../redux/actions/productActions";
+import validationClienteForm from "./validationClienteForm";
+import { createClient } from "../../../redux/actions/clientActions";
 
-export default function TabFormCreateProduct({ isOpen, onClose, product }) {
+export default function TabCreateClient({ isOpen, onClose, cliente }) {
   const dispatch = useDispatch();
   const [formData, setFormData] = useState({
     nombre: "",
-    cantidad: "",
-    precio: 0,
+    direccion: "",
+    celular: "",
   });
   const [errors, setErrors] = useState({});
   const memoizedErrors = useMemo(() => {
-    return validationProductForm(formData);
+    return validationClienteForm(formData);
   }, [formData]);
 
   useEffect(() => {
@@ -24,15 +21,15 @@ export default function TabFormCreateProduct({ isOpen, onClose, product }) {
   }, [memoizedErrors]);
 
   useEffect(() => {
-    if (product) {
+    if (cliente) {
       setFormData({
-        id: product.id || "",
-        nombre: product.nombre || "",
-        cantidad: product.stock || "",
-        precio: product.precio || "",
+        id: cliente.id || "",
+        nombre: cliente.nombre || "",
+        direccion: cliente.direccion || "",
+        celular: cliente.celular || "",
       });
     }
-  }, [product]);
+  }, [cliente]);
 
   if (!isOpen) return null;
 
@@ -49,22 +46,11 @@ export default function TabFormCreateProduct({ isOpen, onClose, product }) {
       try {
         const newRow = {
           nombre: formData.nombre,
-          stock: formData.cantidad,
-          precio: formData.precio,
+          direccion: formData.direccion,
+          celular: formData.celular,
         };
+        dispatch(createClient(newRow));
 
-        if (product) {
-          const updatedRows = {
-            id: formData.id,
-            nombre: formData.nombre,
-            stock: formData.cantidad,
-            precio: formData.precio,
-          };
-
-          dispatch(updateRow(updatedRows));
-        } else {
-          dispatch(addSheetRow(newRow));
-        }
         setFormData({});
         onClose();
       } catch (error) {
@@ -103,45 +89,44 @@ export default function TabFormCreateProduct({ isOpen, onClose, product }) {
           )}
         </div>
         <div className="mt-2">
-          <label htmlFor="cantidad">Cantidad</label>
+          <label htmlFor="direccion">Direccion</label>
           <input
             className={`bg-white w-full p-2 text-center mt-2 rounded-md border ${
-              errors.stock ? "border-red-500" : "border-gray-400"
+              errors.direccion ? "border-red-500" : "border-gray-400"
             }`}
             type="text"
-            id="cantidad"
-            name="cantidad"
-            value={formData.cantidad}
+            id="direccion"
+            name="direccion"
+            value={formData.direccion}
             onChange={handleChange}
-            placeholder="Cantidad"
+            placeholder="direccion"
           />
-          {errors.stock && (
-            <p className="text-red-500 text-xs">{errors.stock}</p>
+          {errors.direccion && (
+            <p className="text-red-500 text-xs">{errors.direccion}</p>
           )}
         </div>
         <div className="mt-2">
-          <label htmlFor="precio">Precio</label>
+          <label htmlFor="celular">Celular</label>
           <input
             className={`bg-white w-full p-2 text-center mt-2 rounded-md border ${
-              errors.precio ? "border-red-500" : "border-gray-400"
+              errors.celular ? "border-red-500" : "border-gray-400"
             }`}
-            type="number"
-            id="precio"
-            name="precio"
-            value={formData.precio}
+            type="text"
+            id="celular"
+            name="celular"
+            value={formData.celular}
             onChange={handleChange}
-            placeholder="Precio"
+            placeholder="celular"
           />
-          {errors.precio && (
-            <p className="text-red-500 text-xs">{errors.precio}</p>
+          {errors.celular && (
+            <p className="text-red-500 text-xs">{errors.celular}</p>
           )}
         </div>
-
         <button
           type="submit"
           className="p-4 shadow-lg bg-blue-300 text-gray-900 rounded-md mt-2"
         >
-          {product ? "Editar producto" : "Crear producto"}
+          Crear cliente
         </button>
       </form>
     </div>

@@ -2,6 +2,7 @@ require("dotenv").config();
 const { google } = require("googleapis");
 const { getUser } = require("../user/userController");
 const { getSheetData, getSheetDataById } = require("./productController");
+const { getClients, getClientById } = require("./clientController");
 
 async function authorize() {
   const auth = new google.auth.GoogleAuth({
@@ -33,7 +34,7 @@ async function registerSaleDashboard(auth, data) {
   try {
     const sheets = google.sheets({ version: "v4", auth });
 
-    const { productos, formaPago, tipoEnvio, medio, nombreCliente } = data;
+    const { productos, formaPago, total, idCliente } = data;
 
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: process.env.GOOGLE_SHEETS_ID,
@@ -57,10 +58,12 @@ async function registerSaleDashboard(auth, data) {
 
     const statePayment = "Completada";
 
+    const cliente = await getClientById(auth, idCliente);
+
     const ventaData = productos.map((prod) => [
       newId,
       prod.id,
-      nombreCliente,
+      cliente.id,
       prod.cantidad,
       prod.precio,
       formaPago,
@@ -151,19 +154,20 @@ async function getSaleData(auth) {
     const rows = res.data.values || [];
 
     // Obtener los usuarios
-    const users = await getUser(auth); // Usamos la función getUser para obtener los usuarios
+    const clientes = await getClients(auth); // Usamos la función getUser para obtener los usuarios
 
-    // Crear un array para almacenar los datos de las ventas
     const salesData = rows.map((row) => {
       const clienteId = row[2]; // Asumiendo que el ID del cliente está en la columna 3 (índice 2)
-      const user = users.find((user) => user.uid === clienteId); // Buscar el usuario por uid
+      const user = clientes.find((user) => user.id === clienteId); // Buscar el usuario por uid
       const clienteNombre = user ? user.nombre : "Desconocido"; // Si no encuentra el nombre, poner "Desconocido"
+      const clienteCelular = user.celular;
 
       return {
         id: row[0],
         idProducto: row[1],
         idCliente: row[2],
         cliente: clienteNombre,
+        celular: clienteCelular,
         cantidad: parseInt(row[3]),
         subtotal: parseFloat(row[4]),
         pago: row[5],
@@ -178,6 +182,124 @@ async function getSaleData(auth) {
   } catch (error) {
     console.log({ error: error.message });
     throw new Error("Error retrieving sales data");
+  }
+}
+
+async function getWeeklySalesByClient(auth) {
+  try {
+    const sheets = google.sheets({ version: "v4", auth });
+
+    // Obtener los datos de las ventas desde la hoja "Ventas"
+    const salesRes = await sheets.spreadsheets.values.get({
+      spreadsheetId: process.env.GOOGLE_SHEETS_ID,
+      range: "Ventas!A2:J", // Ajusta el rango si es necesario
+    });
+    const salesRows = salesRes.data.values || [];
+
+    if (salesRows.length === 0) {
+      return []; // No hay ventas
+    }
+
+    // Función para convertir fecha en formato "dd/mm/yyyy" a un objeto Date
+    function parseDate(dateString) {
+      const [day, month, year] = dateString.split('/');
+      return new Date(`${year}-${month}-${day}`);
+    }
+
+    // Ordenar las ventas por fecha
+    salesRows.sort((a, b) => parseDate(a[8]) - parseDate(b[8]));
+
+    // Crear una lista para almacenar los resultados
+    const weeklySalesData = [];
+
+    let currentStartDate = parseDate(salesRows[0][8]); // La primera fecha de venta
+    currentStartDate.setHours(0, 0, 0, 0); // Ajustar a medianoche para precisión
+    let currentEndDate = new Date(currentStartDate);
+    currentEndDate.setDate(currentEndDate.getDate() + 6); // Intervalo de 7 días
+
+    // Crear un objeto para almacenar el total de ventas por cliente y por semana
+    const weeklySalesByClient = {};
+
+    // Iterar sobre las ventas para agrupar y sumar los totales en intervalos de 7 días
+    for (const row of salesRows) {
+      const saleDate = parseDate(row[8]); // Fecha de la venta
+      const totalSale = parseFloat(row[7]); // Total de la venta
+      const clientId = row[2];
+
+      // Verificar si la fecha de la venta está dentro del intervalo actual
+      if (saleDate >= currentStartDate && saleDate <= currentEndDate) {
+        if (!weeklySalesByClient[clientId]) {
+          weeklySalesByClient[clientId] = {};
+        }
+        const weekKey = `${currentStartDate.toISOString()}-${currentEndDate.toISOString()}`;
+
+        if (!weeklySalesByClient[clientId][weekKey]) {
+          weeklySalesByClient[clientId][weekKey] = 0;
+        }
+
+        weeklySalesByClient[clientId][weekKey] += totalSale;
+      } else {
+        // Guardar los datos del intervalo actual en el array
+        for (const clientId in weeklySalesByClient) {
+          for (const weekKey in weeklySalesByClient[clientId]) {
+            const clientData = await getClientById(auth, clientId); // Obtener datos del cliente
+
+            weeklySalesData.push({
+              ...clientData, // Añadir los datos del cliente
+              weekStart: weekKey.split("-")[0],
+              weekEnd: weekKey.split("-")[1],
+              totalSales: weeklySalesByClient[clientId][weekKey],
+            });
+          }
+        }
+
+        // Reiniciar el intervalo
+        currentStartDate = parseDate(row[8]);
+        currentStartDate.setHours(0, 0, 0, 0);
+        currentEndDate = new Date(currentStartDate);
+        currentEndDate.setDate(currentEndDate.getDate() + 6);
+
+        // Acumular el total de ventas para el nuevo intervalo
+        if (!weeklySalesByClient[clientId]) {
+          weeklySalesByClient[clientId] = {};
+        }
+
+        const weekKey = `${currentStartDate.toISOString()}-${currentEndDate.toISOString()}`;
+
+        if (!weeklySalesByClient[clientId][weekKey]) {
+          weeklySalesByClient[clientId][weekKey] = 0;
+        }
+
+        weeklySalesByClient[clientId][weekKey] += totalSale;
+      }
+    }
+
+    // Guardar los datos del último intervalo en el array
+    for (const clientId in weeklySalesByClient) {
+      for (const weekKey in weeklySalesByClient[clientId]) {
+        const clientData = await getClientById(auth, clientId); // Obtener datos del cliente
+    
+        // Extraer la parte inicial y final del weekKey
+        const [startDate, endDate] = weekKey.split("Z-");
+    
+        // Obtener solo el día de inicio y final
+        const weekStart = startDate.split("-")[2].split("T")[0]; // Día de weekStart
+        const weekEnd = endDate.split("-")[2].split("T")[0]; // Día de weekEnd
+    
+        weeklySalesData.push({
+          ...clientData, // Añadir los datos del cliente
+          weekStart, // Día de la fecha inicial
+          weekEnd, // Día de la fecha final
+          totalSales: weeklySalesByClient[clientId][weekKey],
+        });
+      }
+    }
+    
+    
+    return weeklySalesData;
+  } catch (error) {
+    console.error({ error: error.message });
+    throw new Error("Error retrieving weekly sales data");
   }
 }
 
@@ -273,7 +395,7 @@ async function getSalesByDate(auth, date) {
   }
 }
 
-async function getSaleByUserId(auth, uid) {
+async function getSaleByClientId(auth, id) {
   try {
     const sheets = google.sheets({ version: "v4", auth });
     const res = await sheets.spreadsheets.values.get({
@@ -283,8 +405,74 @@ async function getSaleByUserId(auth, uid) {
 
     const rows = res.data.values || [];
 
-    // Filtrar las ventas que coinciden con el uid en la columna "cliente"
-    const salesForUser = rows.filter((row) => row[2] === uid);
+    // Filtrar las ventas que coinciden con el id en la columna "cliente"
+    const salesForUser = rows.filter((row) => row[2] === id);
+
+    if (salesForUser.length === 0) {
+      return { message: 'No sales found for this user' };
+    }
+
+    // Obtener la información del cliente solo una vez
+    const client = await getClientById(auth, id);
+
+    // Inicializar arrays para almacenar productos y cantidades
+    const products = [];
+    const quantities = [];
+    const paymentMethods = new Set(); // Para asegurarnos de que el método de pago sea único
+    let totalPrice = 0;
+    let status = "";
+    let date = "";
+    let time = "";
+
+    // Recorrer todas las ventas del cliente
+    for (const row of salesForUser) {
+      const product = await getSheetDataById(Number(row[1]), auth); // Obtener info del producto
+
+      // Añadir información a los arrays
+      products.push(product);
+      quantities.push(row[3]);
+
+      // Asignar otros datos solo una vez (suponiendo que son iguales en todas las ventas)
+      paymentMethods.add(row[5]);
+      status = row[6];
+      totalPrice += parseFloat(row[7]); // Sumar al total el precio
+      date = row[8];
+      time = row[9];
+    }
+
+    // Devolver la información estructurada
+    return {
+      client: {
+        nombre: client.nombre,
+        celular: client.celular,
+      },
+      products,
+      quantities,
+      paymentMethods: [...paymentMethods], // Convertir Set a array
+      status,
+      totalPrice,
+      date,
+      time,
+    };
+  } catch (error) {
+    console.error("Error obteniendo ventas por UID:", error);
+    throw new Error("Error obteniendo ventas por UID");
+  }
+}
+
+
+async function getSaleByUserId(auth, uid) {
+  try {
+    const sheets = google.sheets({ version: "v4", auth });
+    const res = await sheets.spreadsheets.values.get({
+      spreadsheetuid: process.env.GOOGLE_SHEETS_uid,
+      range: "Ventas!A2:J", // Ajusta el rango según tu hoja de ventas
+    });
+
+    const rows = res.data.values || [];
+
+    // Filtrar las ventas que coinciden con el id en la columna "cliente"
+    const salesForUser = rows.filter((row) => row[2] === id);
 
     // Obtener la información del producto para cada venta
     const salesData = await Promise.all(
@@ -295,7 +483,7 @@ async function getSaleByUserId(auth, uid) {
           productId: row[1],
           clientId: row[2],
           quantity: row[3],
-          price: row[4],
+          // price: row[4],
           paymentMethod: row[5],
           status: row[6],
           totalPrice: row[7],
@@ -358,7 +546,7 @@ async function decreaseStock(auth, productId, amount) {
   // Actualizar solo la columna del stock
   const res = await sheets.spreadsheets.values.update({
     spreadsheetId: process.env.GOOGLE_SHEETS_ID,
-    range: `Productos!F${rowIndex + 2}`, // Asegúrate de que la columna de stock sea la columna G (ajusta si es diferente)
+    range: `Productos!C${rowIndex + 2}`, // Asegúrate de que la columna de stock sea la columna C (ajusta si es diferente)
     valueInputOption: "RAW",
     resource: {
       values: [[newStock]],
@@ -707,6 +895,7 @@ module.exports = {
   authorize,
   registerSaleDashboard,
   getSaleData,
+  getWeeklySalesByClient,
   getSaleDataUnitiInfo,
   getSalesByDate,
   increaseStock,
@@ -716,5 +905,6 @@ module.exports = {
   addCashFlowEntry,
   appendRowPayment,
   getSaleByUserId,
+  getSaleByClientId,
   putSaleChangeState,
 };

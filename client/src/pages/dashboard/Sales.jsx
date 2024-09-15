@@ -10,6 +10,7 @@ import SheetsSales from "../../componentes/Dashboard/Sheets/SheetsSales";
 import TabViewSale from "../../componentes/Dashboard/Popup/TabViewSale";
 import TabDeleteSaleButton from "../../componentes/Dashboard/Popup/TabDeleteSaleButton";
 import TabConfirmStateChangeSale from "../../componentes/Dashboard/Popup/TabConfirmStateChangeSale";
+import SalesByClientList from "../../componentes/Dashboard/Sales/SalesByClientList";
 
 const Sales = () => {
   const [openModal, setOpenModal] = useState(false);
@@ -55,7 +56,7 @@ const Sales = () => {
 
   const filteredSales = sales.filter((sale) => sale.estadoPago !== "Anulado");
   // Filtrar las ventas
-  const searchedSales  = filteredSales?.filter((sale) => {
+  const searchedSales = filteredSales?.filter((sale) => {
     const lowercasedFilter = searchTerm.toLowerCase();
     return (
       sale.id.toString().toLowerCase().includes(lowercasedFilter) ||
@@ -95,37 +96,49 @@ const Sales = () => {
       <div className="flex justify-between items-center">
         <h1 className="text-xl text-white">Ventas</h1>
       </div>
-      <div className="mt-8 h-screen">
-        <div className="flex flex-row justify-center items-center mb-2">
-          <div className="flex border border-gray-300 rounded-md text-white bg-gray-300 p-2 gap-2">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="currentColor"
-              className="size-6"
-            >
-              <path
-                fillRule="evenodd"
-                d="M10.5 3.75a6.75 6.75 0 1 0 0 13.5 6.75 6.75 0 0 0 0-13.5ZM2.25 10.5a8.25 8.25 0 1 1 14.59 5.28l4.69 4.69a.75.75 0 1 1-1.06 1.06l-4.69-4.69A8.25 8.25 0 0 1 2.25 10.5Z"
-                clipRule="evenodd"
-              />
-            </svg>
-          </div>
+      <div className="mt-8 w-full flex flex-col-reverse lg:flex-row gap-2">
+        <div className="lg:w-4/5">
+          <div className="flex flex-row justify-center items-center mb-2">
+            <div className="flex border border-gray-300 rounded-md text-white bg-gray-300 p-2 gap-2">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+                className="size-6"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M10.5 3.75a6.75 6.75 0 1 0 0 13.5 6.75 6.75 0 0 0 0-13.5ZM2.25 10.5a8.25 8.25 0 1 1 14.59 5.28l4.69 4.69a.75.75 0 1 1-1.06 1.06l-4.69-4.69A8.25 8.25 0 0 1 2.25 10.5Z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </div>
 
-          <input
-            type="text"
-            placeholder="Buscar por N° venta, Cliente, Total, Fecha, Hora"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="border p-2 rounded-md w-full border-gray-400"
+            <input
+              type="text"
+              placeholder="Buscar por N° venta, Cliente, Total, Fecha, Hora"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="border p-2 rounded-md w-full border-gray-400"
+            />
+          </div>
+          <SheetsSales
+            data={searchedSales}
+            onViewSale={toggleModal}
+            toggleDelete={toggleDeleteModal}
+            changeState={openChangeStateModal}
           />
         </div>
-        <SheetsSales
-          data={searchedSales}
-          onViewSale={toggleModal}
-          toggleDelete={toggleDeleteModal}
-          changeState={openChangeStateModal}
-        />
+        <div className="lg:w-1/5 flex flex-col gap-2">
+          <div className="text-center border border-gray-300 rounded-md p-2">
+            Historial
+          </div>
+          <div className="lg:h-screen overflow-y-auto border border-gray-300 p-2 rounded-md">
+            <div className="mt-2">
+              <SalesByClientList />
+            </div>
+          </div>
+        </div>
       </div>
     </Layout>
   );

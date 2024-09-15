@@ -14,6 +14,7 @@ import Users from "./pages/dashboard/Users";
 import Error from "./pages/dashboard/Error";
 import Balance from "./pages/dashboard/Balance";
 import PagePayment from "./pages/dashboard/PagePayment";
+import DashboardClientId from "./pages/dashboard/DashboardClientId";
 
 
 function App() {
@@ -50,6 +51,7 @@ function App() {
         {isAuth ? (
           <Route>
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/dashboard/client/:id" element={<DashboardClientId />} />
             <Route path="/dashboard/products" element={<Products />} />
             <Route path="/dashboard/sales" element={<Sales />} />
             <Route path="/dashboard/users" element={<Users />} />

@@ -10,14 +10,17 @@ import {
   INCREMENT_QUANTITY,
 } from "../actions/cartActions";
 import {
+  GET_SALE_BY_CLIENT_ID,
   GET_SALE_BY_ID,
   GET_SALE_BY_USER_ID,
+  GET_SALE_BY_WEEKLY,
   GET_SALES,
 } from "../actions/salesActions";
 
 const initialState = {
   cartItems: JSON.parse(localStorage.getItem("cartItems")) || [],
   sales: [],
+  salesWeekly: [],
   saleInfo: [],
   sale: {},
   cartSent: false,
@@ -63,7 +66,7 @@ const cartReducer = (state = initialState, action) => {
         cartItems: updatedCartItems,
         cartError: null,
       };
-    
+
     case REMOVE_FROM_CART:
       updatedCartItems = state.cartItems.filter((item) => item.id !== payload);
       localStorage.setItem("cartItems", JSON.stringify(updatedCartItems));
@@ -125,6 +128,17 @@ const cartReducer = (state = initialState, action) => {
       return {
         ...state,
         saleInfo: payload,
+      };
+
+    case GET_SALE_BY_CLIENT_ID:
+      return {
+        ...state,
+        saleInfo: payload,
+      };
+    case GET_SALE_BY_WEEKLY:
+      return {
+        ...state,
+        salesWeekly: payload,
       };
 
     case INCREMENT_QUANTITY:

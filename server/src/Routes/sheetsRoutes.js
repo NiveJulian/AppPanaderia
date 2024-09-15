@@ -11,6 +11,9 @@ const {
   getSaleByUserId,
   registerSaleDashboard,
   putSaleChangeState,
+  getSaleDataUnitiInfo,
+  getWeeklySalesByClient,
+  getSaleByClientId,
 } = require("../Controllers/sheets/sheetsController.js");
 const {
   getSheetData,
@@ -96,8 +99,24 @@ sheetsRouter.get("/sale", async (req, res) => {
     const sale = await getSaleData(auth);
     res.json(sale.salesData);
   } catch (error) {
-    console.log({errorSale: error.message})
+    console.log({ errorSale: error.message });
     res.status(500).send(error.message);
+  }
+});
+
+sheetsRouter.get("/sales/weekly", async (req, res) => {
+  try {
+    const auth = await authorize();
+    const weeklySalesTotal = await getWeeklySalesByClient(auth);
+    if (!weeklySalesTotal) {
+      return res
+        .status(404)
+        .json({ error: "No se encontraron ventas en la semana" });
+    }
+
+    res.status(200).json({ total: weeklySalesTotal });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 });
 
@@ -143,6 +162,20 @@ sheetsRouter.post("/sale/dashboard", async (req, res) => {
     res.status(500).send(error.message);
   }
 });
+
+sheetsRouter.get("/sales/client/:id", async (req, res) => {
+  try {
+    const id = req.params.id;
+    // console.log(id)
+    const auth = await authorize();
+    const sale = await getSaleByClientId(auth, id);
+    res.json(sale);
+  } catch (error) {
+    // console.log({ error: error.message });
+    res.status(500).send(error.message);
+  }
+});
+
 
 sheetsRouter.get("/sales/:uid", async (req, res) => {
   try {

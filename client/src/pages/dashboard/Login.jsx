@@ -6,7 +6,6 @@ import { Link, useNavigate } from "react-router-dom";
 
 const Login = () => {
   const dispatch = useDispatch();
-  const navigate = useNavigate();
   const onGoogleSignIn = async (e) => {
     e.preventDefault();
     dispatch(doSignInWithGoogle());
@@ -16,15 +15,6 @@ const Login = () => {
       <div className="w-1/2 hidden lg:inline-flex h-full text-white">
         <div className="w-[550px] shadow-md shadow-gray-400 h-full bg-gray-800 px-10 flex flex-col gap-6 justify-center">
           <div className="flex flex-row justify-center items-center gap-2 border-b">
-            <div className="mb-2">
-              <Link to="/">
-                <img
-                  src={"zeppelinstore.webp"}
-                  alt="logoImg"
-                  className="w-20 h-20 rounded-full mt-4 border border-gray-400 p-1 hover:animate-pulse"
-                />
-              </Link>
-            </div>
             <div className="flex flex-col">
               <h1 className="font-titleFont text-2xl font-bold">Bienvenido!</h1>
               <p className="text-base">
@@ -85,7 +75,7 @@ const Login = () => {
           <div className="flex items-center justify-between gap-2 mb-6">
             <Link to="/">
               <p className="text-sm font-semibold text-gray-300 hover:text-secondary cursor-pointer duration-300">
-                © 2024 Zeppelin store.
+                © 2024 Espiga de oro.
               </p>
             </Link>
             <p className="text-sm font-semibold text-gray-300 hover:text-secondary cursor-pointer duration-300">

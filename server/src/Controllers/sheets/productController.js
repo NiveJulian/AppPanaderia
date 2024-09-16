@@ -5,7 +5,7 @@ async function getSheetData(auth) {
     const sheets = google.sheets({ version: "v4", auth });
     const res = await sheets.spreadsheets.values.get({
       spreadsheetId: process.env.GOOGLE_SHEETS_ID,
-      range: "Productos!A2:J",
+      range: "Productos!A2:E",
     });
     const rows = res.data.values || []; // Asegúrate de que 'rows' sea un array vacío si no hay datos
 
@@ -43,7 +43,7 @@ async function getSheetDataById(id, auth) {
     const sheets = google.sheets({ version: "v4", auth });
     const res = await sheets.spreadsheets.values.get({
       spreadsheetId: process.env.GOOGLE_SHEETS_ID,
-      range: "Productos!A2:J",
+      range: "Productos!A2:E",
     });
     const rows = res.data.values || [];
 
@@ -83,7 +83,7 @@ async function appendRow(auth, rowData) {
   ];
   const res = await sheets.spreadsheets.values.append({
     spreadsheetId: process.env.GOOGLE_SHEETS_ID,
-    range: "Productos!A2:J",
+    range: "Productos!A2:E",
     valueInputOption: "RAW",
     resource: {
       values: [newRow],
@@ -110,7 +110,7 @@ async function updateRow(auth, rowData) {
   const updatedRow = [
     rowData.id,
     rowData.nombre,
-    rowData.cantidad,
+    rowData.stock,
     rowData.precio,
     rowData.publicado,
   ];
@@ -118,7 +118,7 @@ async function updateRow(auth, rowData) {
   // Actualizar la fila en la hoja de cálculo
   const res = await sheets.spreadsheets.values.update({
     spreadsheetId: process.env.GOOGLE_SHEETS_ID,
-    range: `Productos!A${rowIndex + 2}:J${rowIndex + 2}`,
+    range: `Productos!A${rowIndex + 2}:E${rowIndex + 2}`,
     valueInputOption: "RAW",
     resource: {
       values: [updatedRow],
@@ -134,7 +134,7 @@ async function deleteRowById(auth, id) {
   // Obtener todos los datos de la hoja
   const getRows = await sheets.spreadsheets.values.get({
     spreadsheetId: process.env.GOOGLE_SHEETS_ID,
-    range: "Productos!A:I", // Ajusta el rango según sea necesario
+    range: "Productos!A:E", // Ajusta el rango según sea necesario
   });
 
   const rows = getRows.data.values;
@@ -183,7 +183,7 @@ async function activeProductById(auth, id) {
   // Obtener todos los datos de la hoja
   const getRows = await sheets.spreadsheets.values.get({
     spreadsheetId: process.env.GOOGLE_SHEETS_ID,
-    range: "Productos!A:J", // Ajusta el rango para incluir hasta la columna J
+    range: "Productos!A:E", // Ajusta el rango para incluir hasta la columna J
   });
 
   const rows = getRows.data.values;

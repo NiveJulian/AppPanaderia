@@ -17,8 +17,7 @@ const SalesByClientList = () => {
   const generarMensajeWhatsApp = (venta) => {
     const productos = venta.products
       .map(
-        (producto, index) =>
-          `*Producto*: ${producto.nombre} 
+        (producto, index) => `- *Producto*: ${producto.nombre}
           - *Cantidad*: ${venta.quantities[index]} 
           - *Precio Unitario*: $${producto.precio} 
           - *Subtotal*: $${producto.precio * venta.quantities[index]}\n`
@@ -66,29 +65,26 @@ const SalesByClientList = () => {
       {loading && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-800 bg-opacity-50">
           <Loader />
-          {/* Aquí puedes agregar un componente de loader visual, como un spinner */}
         </div>
       )}
 
-      <div className="flex gap-1 lg:flex-col flex-row lg:overflow-hidden overflow-x-scroll">
+      <div className="flex gap-2 lg:flex-col ">
         {salesWeekly &&
           salesWeekly.map((sale, i) => {
             return (
               <div
                 key={i}
-                className="w-full h-full border border-yellow-400 text-white bg-yellow-600 rounded-md"
+                className="w-full border border-teal-500 text-black bg-white rounded-md flex flex-col justify-between"
               >
-                <div className="flex">
-                  <h1 className="text-center font-bold uppercase border p-2 border-yellow-400">
-                    {sale.nombre}
-                  </h1>
-                  <span className="p-2 border-t border-yellow-400 text-center">
-                    <p className="font-bold">Total</p> ${sale.totalSales}
-                  </span>
-                </div>
+                <h1 className="text-center font-bold uppercase bg-teal-300 p-2">
+                  {sale.nombre}
+                </h1>
+                <span className="p-2 text-center">
+                  <p className="font-bold">Total</p> ${sale.totalSales}
+                </span>
                 <button
                   onClick={() => handleTicketByWP(sale.id)}
-                  className="flex items-center justify-center bottom-0 gap-2 border w-full p-1 bg-gray-600 rounded-md"
+                  className="text-white gap-2 border w-full p-1 bg-gray-600"
                 >
                   Generar ticket
                 </button>

@@ -23,7 +23,7 @@ const SheetsSales = ({ data, onViewSale, toggleDelete, changeState }) => {
 
   return (
     <div className="w-full">
-      <div className="grid h-screen overflow-y-auto grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4 border border-gray-300 rounded-md">
+      <div className="grid overflow-y-auto grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-4 border border-gray-300 rounded-md">
         {currentProducts.length > 0 ? (
           currentProducts.map((prod, index) => (
             <div

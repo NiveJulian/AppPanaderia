@@ -2,7 +2,10 @@ import { useState, useEffect, useMemo } from "react";
 import { useDispatch } from "react-redux";
 import toast from "react-hot-toast";
 import validationClienteForm from "./validationClienteForm";
-import { createClient } from "../../../redux/actions/clientActions";
+import {
+  createClient,
+  updateClient,
+} from "../../../redux/actions/clientActions";
 
 export default function TabCreateClient({ isOpen, onClose, cliente }) {
   const dispatch = useDispatch();
@@ -44,12 +47,22 @@ export default function TabCreateClient({ isOpen, onClose, cliente }) {
     e.preventDefault();
     if (Object.keys(memoizedErrors).length === 0) {
       try {
-        const newRow = {
-          nombre: formData.nombre,
-          direccion: formData.direccion,
-          celular: formData.celular,
-        };
-        dispatch(createClient(newRow));
+        if (cliente) {
+          const updateRow = {
+            nombre: formData.nombre,
+            direccion: formData.direccion,
+            celular: formData.celular,
+          };
+
+          dispatch(updateClient(cliente.id, updateRow));
+        } else {
+          const newRow = {
+            nombre: formData.nombre,
+            direccion: formData.direccion,
+            celular: formData.celular,
+          };
+          dispatch(createClient(newRow));
+        }
 
         setFormData({});
         onClose();

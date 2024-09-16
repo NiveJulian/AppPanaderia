@@ -11,13 +11,22 @@ import {
   removeFromCart,
 } from "../../../redux/actions/cartActions";
 import Loader from "../../Loader/Loader";
+import TabCreateClient from "../Popup/TabCreateClient";
 
 const DisplayProductDashboard = ({ products, client }) => {
   const cartItems = useSelector((state) => state.cart.cartItems);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(false);
+  const [activeForm, setActiveForm] = useState(false);
+
+
+  const toggleModal = () => {
+    setActiveForm(!activeForm);
+  };
+
   const { id } = useParams();
   const dispatch = useDispatch();
+
   const calculateTotal = () => {
     const total = cartItems.reduce((acc, product) => {
       const precio = parseInt(product.precio);
@@ -133,6 +142,9 @@ const DisplayProductDashboard = ({ products, client }) => {
 
   return (
     <div className="container mx-auto bg-white border border-gray-300 shadow-lg">
+      {activeForm && (
+        <TabCreateClient isOpen={activeForm} onClose={toggleModal} cliente={client} />
+      )}
       {loading ? (
         <div className="flex justify-center flex-col gap-2 items-center h-screen">
           <Loader />
@@ -156,7 +168,7 @@ const DisplayProductDashboard = ({ products, client }) => {
               <div className="flex items-center">
                 <div className="text-sm text-center mr-4">
                   <div className="font-light text-gray-500"></div>
-                  <span className="font-semibold"></span>
+                  <button onClick={() => toggleModal()} className="font-semibold border p-2 border-gray-400 rounded-md bg-gray-400 text-white shadow-md active:translate-y-[1px]">Editar cliente</button>
                 </div>
               </div>
             </div>

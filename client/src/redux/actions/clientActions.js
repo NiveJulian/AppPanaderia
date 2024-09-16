@@ -4,6 +4,7 @@ import instance from "../../api/axiosConfig";
 export const ALL_CLIENTS = "ALL_CLIENTS";
 export const GET_CLIENT_BY_ID = "GET_CLIENT_BY_ID";
 export const CREATE_CLIENT = "CREATE_CLIENT";
+export const UPDATE_CLIENT = "UPDATE_CLIENT";
 
 export const getClientById = (id) => async (dispatch) => {
   try {
@@ -51,5 +52,24 @@ export const createClient = (data) => async (dispatch) => {
     }
   } catch (error) {
     console.log({ errorCreateClient: error.message });
+  }
+};
+
+export const updateClient = (id, data) => async (dispatch) => {
+  try {
+    toast.loading("Actualizando cliente...");
+
+    const response = await instance.put(`/api/clients/update/${id}`, data);
+
+    if (response.status === 200) {
+      toast.success("Cliente actualizado");
+      
+      dispatch({
+        type: UPDATE_CLIENT,
+        payload: response.data,
+      });
+    }
+  } catch (error) {
+    console.log(error);
   }
 };

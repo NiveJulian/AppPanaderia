@@ -3,6 +3,7 @@ const {
   appendClient,
   getClients,
   getClientById,
+  updateClient,
 } = require("../Controllers/sheets/clientController");
 const { authorize } = require("../Controllers/sheets/sheetsController");
 const clientRoutes = Router();
@@ -50,6 +51,19 @@ clientRoutes.get("/name/:name", async (req, res) => {
     const { name } = req.params;
     const auth = await authorize();
     const client = await getClientByName(auth, name);
+    res.status(200).json(client);
+  } catch (error) {
+    console.log({ error: error.message });
+    res.status(404).json({ error: error.message });
+  }
+});
+
+clientRoutes.put("/update/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const data = req.body;
+    const auth = await authorize();
+    const client = await updateClient(auth, id, data);
     res.status(200).json(client);
   } catch (error) {
     console.log({ error: error.message });

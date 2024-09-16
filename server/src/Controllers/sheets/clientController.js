@@ -139,9 +139,57 @@ async function getClientByName(auth, clientName) {
   }
 }
 
+async function updateClient(auth, id, updatedData) {
+  try {
+    const sheets = google.sheets({ version: "v4", auth });
+
+    // Obtener los datos de la hoja de cálculo
+    const res = await sheets.spreadsheets.values.get({
+      spreadsheetId: process.env.GOOGLE_SHEETS_ID,
+      range: "Clientes!A2:D", // Asegúrate de que coincida con tu rango de clientes
+    });
+
+    const rows = res.data.values || [];
+    
+    // Buscar el índice de la fila donde está el cliente
+    const rowIndex = rows.findIndex((row) => row[0] === id);
+
+    if (rowIndex === -1) {
+      throw new Error(`Cliente con ID '${id}' no encontrado`);
+    }
+
+    // Actualizar los datos del cliente con los nuevos valores (respetar las columnas A, B, C y D)
+    const updatedRow = [
+      id, // No cambiar el ID
+      updatedData.nombre || rows[rowIndex][1], // Si no hay cambios, usar el valor anterior
+      updatedData.direccion || rows[rowIndex][2],
+      updatedData.celular || rows[rowIndex][3],
+    ];
+
+    // Especificar el rango de la fila que se va a actualizar
+    const range = `Clientes!A${rowIndex + 2}:D${rowIndex + 2}`;
+
+    // Actualizar la fila en la hoja de cálculo
+    const updateRes = await sheets.spreadsheets.values.update({
+      spreadsheetId: process.env.GOOGLE_SHEETS_ID,
+      range: range,
+      valueInputOption: "RAW",
+      resource: {
+        values: [updatedRow],
+      },
+    });
+
+    return updateRes.data.updatedCells;
+  } catch (error) {
+    console.log({ error: error.message });
+    throw new Error("Error actualizando los datos del cliente");
+  }
+}
+
 module.exports = {
   appendClient,
   getClients,
   getClientById,
   getClientByName,
+  updateClient, // Añadir la función de actualización
 };

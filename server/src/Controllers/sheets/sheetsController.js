@@ -596,7 +596,7 @@ async function deleteSalesById(auth, id) {
           sheetId: sheetId, // Usamos el sheetId obtenido
           startRowIndex: rowIndex + 1, // +1 porque las filas en Google Sheets empiezan en 1
           endRowIndex: rowIndex + 2,
-          startColumnIndex: 9, // Columna del estadoPago (columna J)
+          startColumnIndex: 6, // Columna del estadoPago (columna J)
           endColumnIndex: 10,
         },
         rows: [

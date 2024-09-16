@@ -146,7 +146,10 @@ const DisplayProductDashboard = ({ products, client }) => {
               <div className="text-gray-800">
                 <div className="font-bold font-serif text-xl flex gap-2 justify-center items-center">
                   <span className="w-12 h-12 rounded-full bg-yellow-600"></span>
-                  Entrega a <span className="uppercase p-1 border border-gray-300 rounded-md text-white bg-yellow-600">{client?.nombre}</span>
+                  Entrega a{" "}
+                  <span className="uppercase p-1 border border-gray-300 rounded-md text-white bg-yellow-600">
+                    {client?.nombre}
+                  </span>
                 </div>
                 <span className="text-xs">Location ID#PDL009</span>
               </div>
@@ -166,7 +169,7 @@ const DisplayProductDashboard = ({ products, client }) => {
                 className="border p-2 rounded-md w-full border-gray-400"
               />
             </div>
-            <div className="grid grid-cols-3 px-3 py-3 gap-4 mt-5 overflow-y-auto h-auto">
+            <div className="grid grid-cols-2 lg:grid-cols-3 px-3 py-3 gap-4 mt-5 overflow-y-auto h-auto">
               {filteredProducts &&
                 filteredProducts.map((product, i) => {
                   return (

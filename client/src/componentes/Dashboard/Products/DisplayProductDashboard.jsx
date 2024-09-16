@@ -155,14 +155,6 @@ const DisplayProductDashboard = ({ products, client }) => {
                   <div className="font-light text-gray-500"></div>
                   <span className="font-semibold"></span>
                 </div>
-                <div>
-                  <Link
-                    to={"/support"}
-                    className="px-4 py-2 bg-gray-200 text-gray-800 font-semibold rounded"
-                  >
-                    Ayuda
-                  </Link>
-                </div>
               </div>
             </div>
             <div className="mt-5 px-5">

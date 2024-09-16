@@ -120,6 +120,7 @@ async function getSaleDataUnitiInfo(auth, id) {
         const clienteId = row[2]; // ID del cliente
         const user = users.find((user) => user.id === clienteId);
         const clienteNombre = user ? user.nombre : "Desconocido"; // Nombre del cliente
+        const clienteCelular = user ? user.celular : ""; // Nombre del cliente
 
         // Buscar información del producto correspondiente
         const productId = row[1]; // ID del producto
@@ -135,6 +136,7 @@ async function getSaleDataUnitiInfo(auth, id) {
           productoPrecio: productPrice, // Precio del producto
           idCliente: clienteId,
           cliente: clienteNombre,
+          celular: clienteCelular,
           cantidad: parseInt(row[3]), // Cantidad comprada
           subtotal: parseFloat(row[4]), // Subtotal de la venta
           pago: row[5], // Método de pago
@@ -170,16 +172,17 @@ async function getSaleData(auth) {
 
     const salesData = rows.map((row) => {
       const clienteId = row[2]; // Asumiendo que el ID del cliente está en la columna 3 (índice 2)
-      const user = clientes.find((user) => user.id === clienteId); // Buscar el usuario por uid
-      const clienteNombre = user ? user.nombre : "Desconocido"; // Si no encuentra el nombre, poner "Desconocido"
-      const clienteCelular = user.celular;
+      const cliente = clientes.find((user) => user.id === clienteId); // Buscar el usuario por uid
+      const clienteNombre = cliente ? cliente.nombre : "Desconocido"; // Si no encuentra el nombre, poner "Desconocido"
+      const clienteCelular = cliente ? cliente.celular : ""; // Si no encuentra el nombre, poner "Desconocido"
+      
 
       return {
         id: row[0],
         idProducto: row[1],
         idCliente: row[2],
         cliente: clienteNombre,
-        celular: clienteCelular,
+        celular: clienteCelular || "",
         cantidad: parseInt(row[3]),
         subtotal: parseFloat(row[4]),
         pago: row[5],

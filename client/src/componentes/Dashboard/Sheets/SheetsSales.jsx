@@ -9,6 +9,7 @@ const SheetsSales = ({ data, onViewSale, toggleDelete, changeState }) => {
   // Control de los productos actuales visibles basados en el estado visibleProducts
   const currentProducts = data.slice(0, visibleProducts);
 
+  console.log(data);
   useEffect(() => {
     setVisibleProducts(9); // Reiniciar a 9 productos visibles cuando cambien los productos
   }, [data]);

@@ -44,6 +44,8 @@ const Sales = () => {
     setOpenModalChangeState(true);
   };
 
+  console.log(sales)
+
   useEffect(() => {
     if (!isEmpty(sale)) {
       setIsLoading(false);

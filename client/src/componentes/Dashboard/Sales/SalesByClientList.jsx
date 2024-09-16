@@ -10,8 +10,8 @@ const SalesByClientList = () => {
   const salesWeekly = useSelector((state) => state.cart.salesWeekly);
   const saleInfo = useSelector((state) => state.cart.saleInfo);
   const dispatch = useDispatch();
-  const [loading, setLoading] = useState(false); // Estado para mostrar loader
-  const [generatingTicket, setGeneratingTicket] = useState(false); // Estado para controlar cuándo se está generando el ticket
+  const [loading, setLoading] = useState(false);
+  const [generatingTicket, setGeneratingTicket] = useState(false);
 
   // Función para generar el mensaje de WhatsApp
   const generarMensajeWhatsApp = (venta) => {
@@ -35,24 +35,23 @@ const SalesByClientList = () => {
 
   // Función que maneja la generación del ticket
   async function handleTicketByWP(id) {
-    setLoading(true); // Muestra el loader mientras obtienes la venta
+    setLoading(true);
     try {
-      await dispatch(getSaleByClientID(id)); // Realiza el dispatch para obtener la venta
-      setGeneratingTicket(true); // Indica que se está generando un ticket
+      await dispatch(getSaleByClientID(id));
+      setGeneratingTicket(true);
     } catch (error) {
       console.log(error);
-      setLoading(false); // Oculta el loader si hay un error
+      setLoading(false);
       setGeneratingTicket(false);
     }
   }
 
-  // Este useEffect se ejecutará cuando saleInfo cambie
   useEffect(() => {
     if (generatingTicket && saleInfo) {
       const enlaceWhatsApp = generarMensajeWhatsApp(saleInfo);
-      setLoading(false); // Oculta el loader
-      setGeneratingTicket(false); // Resetea el estado de generación de ticket
-      window.open(enlaceWhatsApp, "_blank"); // Abre el enlace en una nueva pestaña para enviar por WhatsApp
+      setLoading(false);
+      setGeneratingTicket(false);
+      window.open(enlaceWhatsApp, "_blank");
     }
   }, [saleInfo, generatingTicket]);
 
@@ -61,36 +60,35 @@ const SalesByClientList = () => {
   }, [dispatch]);
 
   return (
-    <div className="w-full">
+    <div className="w-full p-4">
       {loading && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-800 bg-opacity-50">
           <Loader />
         </div>
       )}
 
-      <div className="flex gap-2 lg:flex-col ">
+      <div className="flex flex-row gap-4 md:flex-col md:flex-wrap md:gap-6">
         {salesWeekly &&
-          salesWeekly.map((sale, i) => {
-            return (
-              <div
-                key={i}
-                className="w-full border border-teal-500 text-black bg-white rounded-md flex flex-col justify-between"
+          salesWeekly.map((sale) => (
+            <div
+              key={sale.id}
+              className="border border-teal-500 text-black bg-white rounded-lg shadow-lg p-4 flex flex-col justify-between w-full md:w-80 lg:w-96"
+            >
+              <h1 className="text-center font-bold uppercase bg-teal-300 p-2 rounded-t-lg">
+                {sale.nombre}
+              </h1>
+              <p className="font-bold text-center mt-2">Total</p>
+              <span className="p-2 text-center w-full font-semibold text-xl">
+                ${sale.totalSales}
+              </span>
+              <button
+                onClick={() => handleTicketByWP(sale.id)}
+                className="text-white mt-4 border border-transparent bg-gray-600 p-2 rounded-md hover:bg-gray-700 transition-colors"
               >
-                <h1 className="text-center font-bold uppercase bg-teal-300 p-2">
-                  {sale.nombre}
-                </h1>
-                <span className="p-2 text-center">
-                  <p className="font-bold">Total</p> ${sale.totalSales}
-                </span>
-                <button
-                  onClick={() => handleTicketByWP(sale.id)}
-                  className="text-white gap-2 border w-full p-1 bg-gray-600"
-                >
-                  Generar ticket
-                </button>
-              </div>
-            );
-          })}
+                Generar ticket
+              </button>
+            </div>
+          ))}
       </div>
     </div>
   );

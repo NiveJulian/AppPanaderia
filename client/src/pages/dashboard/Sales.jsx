@@ -44,8 +44,6 @@ const Sales = () => {
     setOpenModalChangeState(true);
   };
 
-  console.log(sales)
-
   useEffect(() => {
     if (!isEmpty(sale)) {
       setIsLoading(false);
@@ -131,7 +129,7 @@ const Sales = () => {
             changeState={openChangeStateModal}
           />
         </div>
-        <div className="lg:w-1/5 flex flex-col gap-2">
+        <div className="lg:w-1/5 w-full flex flex-col gap-2">
           <div className="text-center border border-gray-300 rounded-md p-2">
             Historial
           </div>

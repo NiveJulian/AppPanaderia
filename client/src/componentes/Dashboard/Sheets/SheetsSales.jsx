@@ -9,7 +9,6 @@ const SheetsSales = ({ data, onViewSale, toggleDelete, changeState }) => {
   // Control de los productos actuales visibles basados en el estado visibleProducts
   const currentProducts = data.slice(0, visibleProducts);
 
-  console.log(data);
   useEffect(() => {
     setVisibleProducts(9); // Reiniciar a 9 productos visibles cuando cambien los productos
   }, [data]);
@@ -97,7 +96,7 @@ const SheetsSales = ({ data, onViewSale, toggleDelete, changeState }) => {
                   <button
                     onClick={() => handleSendMessage(prod.celular)}
                     className={`hover:text-green-500 hover:border-green-500 border border-gray-200 rounded-full p-2 mr-2 ${
-                      prod.celular !== "" ? "block" : "invisible"
+                      prod.celular !== "" ? "block" : "hidden"
                     }`}
                   >
                     <FaWhatsapp size={22} className="relative" />

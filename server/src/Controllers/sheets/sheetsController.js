@@ -103,33 +103,45 @@ async function getSaleDataUnitiInfo(auth, id) {
     // Obtener ventas
     const res = await sheets.spreadsheets.values.get({
       spreadsheetId: process.env.GOOGLE_SHEETS_ID,
-      range: "Ventas!A2:J",
+      range: "Ventas!A2:J", // Rango de la hoja de ventas
     });
     const rows = res.data.values || [];
 
     // Obtener usuarios
-    const users = await getUser(auth);
+    const users = await getClients(auth);
 
+    // Obtener productos
+    const { products } = await getSheetData(auth);
+
+    // Filtrar y mapear ventas que coinciden con el ID del cliente
     const sales = rows
-      .filter((row) => row[0] === id.toString())
+      .filter((row) => row[0] === id.toString()) // Filtrar por el ID del cliente
       .map((row) => {
         const clienteId = row[2]; // ID del cliente
-        const user = users.find((user) => user.uid === clienteId);
+        const user = users.find((user) => user.id === clienteId);
         const clienteNombre = user ? user.nombre : "Desconocido"; // Nombre del cliente
+
+        // Buscar información del producto correspondiente
+        const productId = row[1]; // ID del producto
+        const product = products.find((prod) => prod.id === productId);
+        const productName = product ? product.nombre : "Producto desconocido";
+        const productPrice = product ? parseFloat(product.precio) : 0;
 
         // Inicializamos el objeto de la venta
         let saleData = {
           id: row[0],
-          idProducto: row[1],
+          idProducto: productId,
+          productoNombre: productName, // Nombre del producto
+          productoPrecio: productPrice, // Precio del producto
           idCliente: clienteId,
           cliente: clienteNombre,
-          cantidad: parseInt(row[3]),
-          subtotal: parseFloat(row[4]),
-          pago: row[5],
-          estadoPago: row[6],
-          total: parseFloat(row[7]),
-          fecha: row[8],
-          hora: row[9],
+          cantidad: parseInt(row[3]), // Cantidad comprada
+          subtotal: parseFloat(row[4]), // Subtotal de la venta
+          pago: row[5], // Método de pago
+          estadoPago: row[6], // Estado del pago
+          total: parseFloat(row[7]), // Total de la compra
+          fecha: row[8], // Fecha de la venta
+          hora: row[9], // Hora de la venta
         };
 
         return saleData;
@@ -202,7 +214,7 @@ async function getWeeklySalesByClient(auth) {
 
     // Función para convertir fecha en formato "dd/mm/yyyy" a un objeto Date
     function parseDate(dateString) {
-      const [day, month, year] = dateString.split('/');
+      const [day, month, year] = dateString.split("/");
       return new Date(`${year}-${month}-${day}`);
     }
 
@@ -278,14 +290,14 @@ async function getWeeklySalesByClient(auth) {
     for (const clientId in weeklySalesByClient) {
       for (const weekKey in weeklySalesByClient[clientId]) {
         const clientData = await getClientById(auth, clientId); // Obtener datos del cliente
-    
+
         // Extraer la parte inicial y final del weekKey
         const [startDate, endDate] = weekKey.split("Z-");
-    
+
         // Obtener solo el día de inicio y final
         const weekStart = startDate.split("-")[2].split("T")[0]; // Día de weekStart
         const weekEnd = endDate.split("-")[2].split("T")[0]; // Día de weekEnd
-    
+
         weeklySalesData.push({
           ...clientData, // Añadir los datos del cliente
           weekStart, // Día de la fecha inicial
@@ -294,8 +306,7 @@ async function getWeeklySalesByClient(auth) {
         });
       }
     }
-    
-    
+
     return weeklySalesData;
   } catch (error) {
     console.error({ error: error.message });
@@ -309,68 +320,32 @@ async function putSaleChangeState(auth, id, state) {
   // Obtener todos los datos de la hoja
   const { salesData } = await getSaleData(auth);
 
-  // Filtrar todas las filas que coincidan con el ID proporcionado
-  const rowsToUpdate = salesData.filter((sale) => sale.id === id);
+  // Buscar la fila que coincida con el ID proporcionado
+  const saleRow = salesData.find((sale) => sale.id === id);
 
-  if (rowsToUpdate.length === 0) {
-    throw new Error("ID not found");
+  if (!saleRow) {
+    throw new Error("ID no encontrado");
   }
 
   // Corregir el valor de 'state' si es necesario
   const correctedState = state === "Enproceso" ? "En proceso" : state;
 
-  // Obtener el ID de la hoja de cálculo
-  const sheetInfo = await sheets.spreadsheets.get({
+  // Obtener el índice de la fila en la que está la venta (considerando que salesData es un array de filas)
+  const rowIndex = salesData.indexOf(saleRow);
+
+  // Usamos el índice de la fila para actualizar solo la columna del estado de pago
+  await sheets.spreadsheets.values.update({
     spreadsheetId: process.env.GOOGLE_SHEETS_ID,
-  });
-
-  const sheet = sheetInfo.data.sheets.find(
-    (s) => s.properties.title === "Ventas" // Asegúrate de que este sea el nombre correcto de tu hoja
-  );
-
-  if (!sheet) {
-    throw new Error("Sheet not found");
-  }
-
-  const sheetId = sheet.properties.sheetId;
-
-  // Crear las solicitudes de actualización para todas las filas coincidentes
-  const requests = rowsToUpdate.map((sale) => {
-    const rowIndex = salesData.indexOf(sale);
-    return {
-      updateCells: {
-        range: {
-          sheetId: sheetId, // Usamos el sheetId obtenido
-          startRowIndex: rowIndex + 1, // +1 porque las filas en Google Sheets empiezan en 1
-          endRowIndex: rowIndex + 2,
-          startColumnIndex: 9, // Columna del estadoPago (columna J)
-          endColumnIndex: 10,
-        },
-        rows: [
-          {
-            values: [
-              {
-                userEnteredValue: {
-                  stringValue: correctedState,
-                },
-              },
-            ],
-          },
-        ],
-        fields: "userEnteredValue",
-      },
-    };
-  });
-
-  // Ejecutar la actualización
-  const res = await sheets.spreadsheets.batchUpdate({
-    spreadsheetId: process.env.GOOGLE_SHEETS_ID,
+    range: `Ventas!G${rowIndex + 2}`, // Suponiendo que "Estado Pedido" está en la columna G (índice 6)
+    valueInputOption: "RAW",
     resource: {
-      requests,
+      values: [[correctedState]],
     },
   });
 
-  return res.data;
+  console.log(
+    `Estado de la venta con ID ${id} actualizado a "${correctedState}"`
+  );
 }
 
 async function getSalesByDate(auth, date) {
@@ -409,20 +384,20 @@ async function getSaleByClientId(auth, id) {
     const salesForUser = rows.filter((row) => row[2] === id);
 
     if (salesForUser.length === 0) {
-      return { message: 'No sales found for this user' };
+      return { message: "No sales found for this user" };
     }
 
     // Obtener la información del cliente solo una vez
     const client = await getClientById(auth, id);
 
-    // Inicializar arrays para almacenar productos y cantidades
+    // Inicializar arrays para almacenar productos, cantidades, fechas y horas
     const products = [];
     const quantities = [];
     const paymentMethods = new Set(); // Para asegurarnos de que el método de pago sea único
+    const dates = []; // Array para almacenar fechas de cada venta
+    const times = []; // Array para almacenar horas de cada venta
     let totalPrice = 0;
     let status = "";
-    let date = "";
-    let time = "";
 
     // Recorrer todas las ventas del cliente
     for (const row of salesForUser) {
@@ -436,8 +411,10 @@ async function getSaleByClientId(auth, id) {
       paymentMethods.add(row[5]);
       status = row[6];
       totalPrice += parseFloat(row[7]); // Sumar al total el precio
-      date = row[8];
-      time = row[9];
+
+      // Agregar la fecha y hora de cada venta
+      dates.push(row[8]); // Almacenar cada fecha
+      times.push(row[9]); // Almacenar cada hora
     }
 
     // Devolver la información estructurada
@@ -451,15 +428,14 @@ async function getSaleByClientId(auth, id) {
       paymentMethods: [...paymentMethods], // Convertir Set a array
       status,
       totalPrice,
-      date,
-      time,
+      dates, // Devolver array con fechas de cada venta
+      times, // Devolver array con horas de cada venta
     };
   } catch (error) {
     console.error("Error obteniendo ventas por UID:", error);
     throw new Error("Error obteniendo ventas por UID");
   }
 }
-
 
 async function getSaleByUserId(auth, uid) {
   try {

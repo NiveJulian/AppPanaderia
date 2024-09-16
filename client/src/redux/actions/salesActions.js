@@ -16,6 +16,7 @@ export const GET_SALE_CHANGE_STATE = "GET_SALE_CHANGE_STATE";
 export const getSaleInfo = (id) => async (dispatch) => {
   try {
     const res = await instance.get(`/api/sheets/sale/${id}`);
+    console.log(res)
     dispatch({
       type: GET_SALE_BY_ID,
       payload: res.data,
@@ -76,7 +77,7 @@ export const getSaleByUserID = (uid) => async (dispatch) => {
 export const getSaleByClientID = (id) => async (dispatch) => {
   try {
     const res = await instance.get(`/api/sheets/sales/client/${id}`);
-    console.log(res.data)
+    console.log(res)
     if (res.status === 200) {
       dispatch({
         type: GET_SALE_BY_CLIENT_ID,
@@ -91,7 +92,6 @@ export const getSaleByClientID = (id) => async (dispatch) => {
 export const getSaleByWeekly = () => async (dispatch) => {
   try {
     const res = await instance.get(`/api/sheets/sales/weekly`);
-    console.log(res);
     if (res.status === 200) {
       dispatch({
         type: GET_SALE_BY_WEEKLY,
@@ -106,7 +106,6 @@ export const getSaleByWeekly = () => async (dispatch) => {
 export const getSales = () => async (dispatch) => {
   try {
     const res = await instance.get(`/api/sheets/sale`);
-    console.log(res);
     const salesData = res.data;
 
     // Filtrar las ventas para que solo haya una por cada ID

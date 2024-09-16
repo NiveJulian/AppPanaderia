@@ -2,83 +2,23 @@ import React, { useState } from "react";
 import Loader from "../../Loader/Loader";
 
 const TabViewSale = ({ isOpen, onClose, sale, loading }) => {
-  const [expandedItems, setExpandedItems] = useState({});
-  const [toggle, setToggle] = useState(false);
-
   if (!isOpen) {
     return null;
   }
 
-  const toggleExpand = (index) => {
-    setExpandedItems((prevState) => ({
-      ...prevState,
-      [index]: !prevState[index],
-    }));
-    setToggle(!toggle);
-  };
-
-  // Obtener solo el primer objeto de la lista de ventas para formas de envío
   const primerVenta = sale[0] || {};
-
-  // Mapear las formas de envío del primer objeto
-  const formasEnvio = primerVenta?.formaEnvio ? (
-    <li className="bg-gray-100 p-4 rounded-lg mb-2">
-      <p>
-        <span className="font-bold">Forma de Envío: </span>
-        {primerVenta?.formaEnvio}
-      </p>
-      <p>
-        <span className="font-bold">Dirección: </span>
-        {primerVenta?.direccion}
-      </p>
-      <p>
-        <span className="font-bold">Provincia: </span>
-        {primerVenta?.provincia}
-      </p>
-      <p>
-        <span className="font-bold">Código Postal: </span>
-        {primerVenta?.cp}
-      </p>
-      <p>
-        <span className="font-bold">Teléfono: </span>
-        {primerVenta?.celular}
-      </p>
-      <p>
-        <span className="font-bold">Correo: </span>
-        {primerVenta?.correo}
-      </p>
-      <p>
-        <span className="font-bold">Hora: </span>
-        {primerVenta?.hora}
-      </p>
-      {primerVenta.paymentInfo ? (
-        <p>
-          <span className="font-bold">Estado del pago: </span>
-          <span
-            className={`p-2 border border-gray-200 rounded-md bg-gray-400 text-white ${
-              primerVenta?.paymentInfo === "approved" ? "bg-green-500" : ""
-            }`}
-          >
-            {primerVenta?.paymentInfo}
-          </span>
-        </p>
-      ) : (
-        ""
-      )}
-    </li>
-  ) : (
-    <p>No hay información de envío disponible</p>
-  );
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-800 bg-opacity-50">
       {loading ? (
-        <Loader />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-800 bg-opacity-50">
+          <Loader />
+        </div>
       ) : (
         <div
           className={`flex flex-col md:flex-row mx-2 md:mx-8 md:h-4/5 h-full w-full overflow-y-scroll md:overflow-hidden bg-gray-200 md:w-4/5 rounded-lg`}
         >
-          <div className="p-8 rounded-3xl w-full md:w-1/2">
+          <div className="p-8 rounded-3xl w-full">
             <div className="flex items-center space-x-2">
               <button
                 onClick={onClose}
@@ -125,7 +65,7 @@ const TabViewSale = ({ isOpen, onClose, sale, loading }) => {
               {sale &&
                 sale.map((info, i) => (
                   <div key={i}>
-                    <button onClick={() => toggleExpand(i)} className="w-full">
+                    <button className="w-full">
                       <div
                         className={`flex items-center space-x-4 p-3.5 bg-gray-100`}
                       >
@@ -147,7 +87,7 @@ const TabViewSale = ({ isOpen, onClose, sale, loading }) => {
                         </span>
                         <div className="flex flex-col flex-1">
                           <h3 className="text-sm font-medium">
-                            {info.cliente}
+                            {info.productoNombre}
                           </h3>
                           <div className="divide-x divide-gray-200 mt-auto">
                             <span className="inline-block px-3 text-xs leading-none text-gray-400 font-normal first:pl-0">
@@ -158,126 +98,11 @@ const TabViewSale = ({ isOpen, onClose, sale, loading }) => {
                             </span>
                           </div>
                         </div>
-                        {toggle ? (
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            strokeWidth="1.5"
-                            stroke="currentColor"
-                            className="size-6"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="m19.5 8.25-7.5 7.5-7.5-7.5"
-                            />
-                          </svg>
-                        ) : (
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="w-5 h-5 shrink-0"
-                            width="24"
-                            height="24"
-                            viewBox="0 0 24 24"
-                            strokeWidth="2"
-                            stroke="currentColor"
-                            fill="none"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          >
-                            <path
-                              stroke="none"
-                              d="M0 0h24v24H0z"
-                              fill="none"
-                            ></path>
-                            <path d="M9 6l6 6l-6 6"></path>
-                          </svg>
-                        )}
                       </div>
                     </button>
-                    {expandedItems[i] && (
-                      <div className="w-full bg-gray-100 absolute -mt-2 p-2 rounded-md">
-                        <div className="flex justify-center items-center flex-col">
-                          <p>
-                            <span className="text-gray-800 p-2 font-bold">
-                              Cod. Producto:
-                            </span>
-
-                            {info.idProducto}
-                          </p>
-                          <p>
-                            <span className="text-gray-800 p-2 font-bold">
-                              SKU:
-                            </span>
-
-                            {info.sku}
-                          </p>
-                          <p>
-                            <span className="text-gray-800 p-2 font-bold">
-                              Talle:
-                            </span>
-
-                            {info.talle}
-                          </p>
-                          <p>
-                            <span className="text-gray-800 p-2 font-bold">
-                              Color:
-                            </span>
-
-                            {info.color}
-                          </p>
-                          <p>
-                            <span className="text-gray-800 p-2 font-bold">
-                              Subtotal:
-                            </span>
-                            ${info.subtotal}
-                          </p>
-                          <p>
-                            <span className="text-gray-800 p-2 font-bold">
-                              Pago:
-                            </span>
-
-                            {info.pago}
-                          </p>
-                          <p>
-                            <span className="text-gray-800 p-2 font-bold">
-                              Fecha:
-                            </span>
-
-                            {info.fecha}
-                          </p>
-                        </div>
-                      </div>
-                    )}
                   </div>
                 ))}
             </div>
-          </div>
-          <div className="md:w-1/2 p-8 w-full rounded-3xl">
-            <div className="flex justify-center items-center space-x-2">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="w-8 h-8 shrink-0"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                strokeWidth="1.5"
-                stroke="currentColor"
-                fill="none"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
-                <path d="M13 3l0 7l6 0l-8 11l0 -7l-6 0l8 -11"></path>
-              </svg>
-              <div className="md:space-y-0.5 md:flex-1">
-                <h3 className="font-medium textLg tracking-tight text-gray-900 leading-tight">
-                  Informacion de Envío
-                </h3>
-              </div>
-            </div>
-            <ul className="mt-8">{formasEnvio}</ul>
           </div>
         </div>
       )}

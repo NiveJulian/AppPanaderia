@@ -63,7 +63,7 @@ export const updateClient = (id, data) => async (dispatch) => {
 
     if (response.status === 200) {
       toast.success("Cliente actualizado");
-      
+
       dispatch({
         type: UPDATE_CLIENT,
         payload: response.data,

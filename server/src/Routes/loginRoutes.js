@@ -18,6 +18,7 @@ loginRoutes.post("/third", async (req, res) => {
   try {
     const { token } = req.body;
     const decodedToken = await verifyToken(token);
+    console.log("Decode Token: ", decodedToken)
     const email = decodedToken.email;
     // Configura el cliente de autenticación de Google
     const authClient = await authorize();

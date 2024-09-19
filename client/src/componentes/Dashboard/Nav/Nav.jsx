@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { doSignOut } from "../../../firebase/auth";
 
 export const Nav = ({ user, showNav }) => {
+  console.log(user);
   return (
     <div
       className={`space-y-6 md:space-y-10 w-full mt-10 ${
@@ -65,71 +66,65 @@ export const Nav = ({ user, showNav }) => {
 
           <span className=""> Balance</span>
         </Link> */}
-        {user.rol !== "seller" ? (
-          <>
-            <Link
-              to={"/dashboard/products"}
-              className="text-sm font-medium text-white py-2 px-2 hover:bg-darkBrown hover:text-white rounded-md transition duration-150 ease-in-out"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-                className="w-6 h-6 fill-current inline-block"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M7.5 6v.75H5.513c-.96 0-1.764.724-1.865 1.679l-1.263 12A1.875 1.875 0 0 0 4.25 22.5h15.5a1.875 1.875 0 0 0 1.865-2.071l-1.263-12a1.875 1.875 0 0 0-1.865-1.679H16.5V6a4.5 4.5 0 1 0-9 0ZM12 3a3 3 0 0 0-3 3v.75h6V6a3 3 0 0 0-3-3Zm-3 8.25a3 3 0 1 0 6 0v-.75a.75.75 0 0 1 1.5 0v.75a4.5 4.5 0 1 1-9 0v-.75a.75.75 0 0 1 1.5 0v.75Z"
-                  clipRule="evenodd"
-                />
-              </svg>
+        <Link
+          to={"/dashboard/products"}
+          className="text-sm font-medium text-white py-2 px-2 hover:bg-darkBrown hover:text-white rounded-md transition duration-150 ease-in-out"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            className="w-6 h-6 fill-current inline-block"
+          >
+            <path
+              fillRule="evenodd"
+              d="M7.5 6v.75H5.513c-.96 0-1.764.724-1.865 1.679l-1.263 12A1.875 1.875 0 0 0 4.25 22.5h15.5a1.875 1.875 0 0 0 1.865-2.071l-1.263-12a1.875 1.875 0 0 0-1.865-1.679H16.5V6a4.5 4.5 0 1 0-9 0ZM12 3a3 3 0 0 0-3 3v.75h6V6a3 3 0 0 0-3-3Zm-3 8.25a3 3 0 1 0 6 0v-.75a.75.75 0 0 1 1.5 0v.75a4.5 4.5 0 1 1-9 0v-.75a.75.75 0 0 1 1.5 0v.75Z"
+              clipRule="evenodd"
+            />
+          </svg>
 
-              <span className="">Productos</span>
-            </Link>
-            <Link
-              to={"/dashboard/sales"}
-              className="text-sm font-medium text-white py-2 px-2 hover:bg-darkBrown hover:text-white rounded-md transition duration-150 ease-in-out"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-                className="w-6 h-6 fill-current inline-block"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M2.25 2.25a.75.75 0 0 0 0 1.5H3v10.5a3 3 0 0 0 3 3h1.21l-1.172 3.513a.75.75 0 0 0 1.424.474l.329-.987h8.418l.33.987a.75.75 0 0 0 1.422-.474l-1.17-3.513H18a3 3 0 0 0 3-3V3.75h.75a.75.75 0 0 0 0-1.5H2.25Zm6.54 15h6.42l.5 1.5H8.29l.5-1.5Zm8.085-8.995a.75.75 0 1 0-.75-1.299 12.81 12.81 0 0 0-3.558 3.05L11.03 8.47a.75.75 0 0 0-1.06 0l-3 3a.75.75 0 1 0 1.06 1.06l2.47-2.47 1.617 1.618a.75.75 0 0 0 1.146-.102 11.312 11.312 0 0 1 3.612-3.321Z"
-                  clipRule="evenodd"
-                />
-              </svg>
+          <span className="">Productos</span>
+        </Link>
+        <Link
+          to={"/dashboard/sales"}
+          className="text-sm font-medium text-white py-2 px-2 hover:bg-darkBrown hover:text-white rounded-md transition duration-150 ease-in-out"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            className="w-6 h-6 fill-current inline-block"
+          >
+            <path
+              fillRule="evenodd"
+              d="M2.25 2.25a.75.75 0 0 0 0 1.5H3v10.5a3 3 0 0 0 3 3h1.21l-1.172 3.513a.75.75 0 0 0 1.424.474l.329-.987h8.418l.33.987a.75.75 0 0 0 1.422-.474l-1.17-3.513H18a3 3 0 0 0 3-3V3.75h.75a.75.75 0 0 0 0-1.5H2.25Zm6.54 15h6.42l.5 1.5H8.29l.5-1.5Zm8.085-8.995a.75.75 0 1 0-.75-1.299 12.81 12.81 0 0 0-3.558 3.05L11.03 8.47a.75.75 0 0 0-1.06 0l-3 3a.75.75 0 1 0 1.06 1.06l2.47-2.47 1.617 1.618a.75.75 0 0 0 1.146-.102 11.312 11.312 0 0 1 3.612-3.321Z"
+              clipRule="evenodd"
+            />
+          </svg>
 
-              <span className="">Ventas</span>
-            </Link>
+          <span className="">Ventas</span>
+        </Link>
 
-            <Link
-              to={"/dashboard/users"}
-              className="text-sm font-medium text-white py-2 px-2 hover:bg-darkBrown hover:text-white rounded-md transition duration-150 ease-in-out"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-                className="w-6 h-6 fill-current inline-block"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M8.25 6.75a3.75 3.75 0 1 1 7.5 0 3.75 3.75 0 0 1-7.5 0ZM15.75 9.75a3 3 0 1 1 6 0 3 3 0 0 1-6 0ZM2.25 9.75a3 3 0 1 1 6 0 3 3 0 0 1-6 0ZM6.31 15.117A6.745 6.745 0 0 1 12 12a6.745 6.745 0 0 1 6.709 7.498.75.75 0 0 1-.372.568A12.696 12.696 0 0 1 12 21.75c-2.305 0-4.47-.612-6.337-1.684a.75.75 0 0 1-.372-.568 6.787 6.787 0 0 1 1.019-4.38Z"
-                  clipRule="evenodd"
-                />
-                <path d="M5.082 14.254a8.287 8.287 0 0 0-1.308 5.135 9.687 9.687 0 0 1-1.764-.44l-.115-.04a.563.563 0 0 1-.373-.487l-.01-.121a3.75 3.75 0 0 1 3.57-4.047ZM20.226 19.389a8.287 8.287 0 0 0-1.308-5.135 3.75 3.75 0 0 1 3.57 4.047l-.01.121a.563.563 0 0 1-.373.486l-.115.04c-.567.2-1.156.349-1.764.441Z" />
-              </svg>
+        <Link
+          to={"/dashboard/users"}
+          className="text-sm font-medium text-white py-2 px-2 hover:bg-darkBrown hover:text-white rounded-md transition duration-150 ease-in-out"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            className="w-6 h-6 fill-current inline-block"
+          >
+            <path
+              fillRule="evenodd"
+              d="M8.25 6.75a3.75 3.75 0 1 1 7.5 0 3.75 3.75 0 0 1-7.5 0ZM15.75 9.75a3 3 0 1 1 6 0 3 3 0 0 1-6 0ZM2.25 9.75a3 3 0 1 1 6 0 3 3 0 0 1-6 0ZM6.31 15.117A6.745 6.745 0 0 1 12 12a6.745 6.745 0 0 1 6.709 7.498.75.75 0 0 1-.372.568A12.696 12.696 0 0 1 12 21.75c-2.305 0-4.47-.612-6.337-1.684a.75.75 0 0 1-.372-.568 6.787 6.787 0 0 1 1.019-4.38Z"
+              clipRule="evenodd"
+            />
+            <path d="M5.082 14.254a8.287 8.287 0 0 0-1.308 5.135 9.687 9.687 0 0 1-1.764-.44l-.115-.04a.563.563 0 0 1-.373-.487l-.01-.121a3.75 3.75 0 0 1 3.57-4.047ZM20.226 19.389a8.287 8.287 0 0 0-1.308-5.135 3.75 3.75 0 0 1 3.57 4.047l-.01.121a.563.563 0 0 1-.373.486l-.115.04c-.567.2-1.156.349-1.764.441Z" />
+          </svg>
 
-              <span className="">Vendedores</span>
-            </Link>
-          </>
-        ) : (
-          ""
-        )}
+          <span className="">Vendedores</span>
+        </Link>
         {/* <Link
           to={"/dashboard/support"}
           className="text-sm font-medium text-white py-2 px-2 hover:bg-darkBrown hover:text-white rounded-md transition duration-150 ease-in-out"

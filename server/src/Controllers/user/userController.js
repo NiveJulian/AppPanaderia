@@ -53,7 +53,7 @@ async function getSeller(authClient) {
       range: `Vendedores!A2:E`,
     });
 
-    const rows = response.data.values || [];
+    const rows = response.data.values;
 
     const data = rows.map((row) => ({
       uid: row[0],
@@ -133,10 +133,12 @@ async function getUserByEmail(authClient, email) {
       rol: user.rol,
     };
   } catch (error) {
-    console.log({ errorGetUserByEmail: error.message });
+    console.log({ error: error.message });
     throw error;
   }
 }
+
+
 
 module.exports = {
   createUser,

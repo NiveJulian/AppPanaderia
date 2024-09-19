@@ -55,7 +55,7 @@ export const doSignInWithGoogle = async () => {
 
       setTimeout(() => {
         if (theUser.rol === "vendedor" || theUser.rol === "admin") {
-          window.location.replace("/dashboard");
+          window.location.replace(`/dashboard`);
         } else {
           window.location.replace("/");
         }
@@ -126,7 +126,7 @@ export const doSignInWithEmailAndPassword = async (email, password) => {
 
       setTimeout(() => {
         if (sellerData.rol === "seller" || sellerData.rol === "admin") {
-          window.location.replace("/dashboard/dashboard");
+          window.location.replace("/dashboard/");
         } else {
           window.location.replace("/");
         }

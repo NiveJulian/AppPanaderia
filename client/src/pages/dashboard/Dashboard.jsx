@@ -1,8 +1,6 @@
 import { useDispatch, useSelector } from "react-redux";
 import { Layout } from "../../componentes/Dashboard/Layout/Layout";
-import DisplayProductDashboard from "../../componentes/Dashboard/Products/DisplayProductDashboard";
 import { useEffect, useState } from "react";
-import { fetchSheets } from "../../redux/actions/productActions";
 import { getClients } from "../../redux/actions/clientActions";
 import { Link } from "react-router-dom";
 import TabCreateClient from "../../componentes/Dashboard/Popup/TabCreateClient";
@@ -19,7 +17,6 @@ const Dashboard = () => {
   };
 
   useEffect(() => {
-    // dispatch(fetchSheets());
     dispatch(getClients());
   }, [dispatch]);
 
@@ -44,15 +41,6 @@ const Dashboard = () => {
                   Crear cliente
                 </button>
               </div>
-            </div>
-            <div className="mt-5 px-5">
-              {/* <input
-                type="text"
-                placeholder="Buscar por nombre o SKU"
-                value={searchTerm}
-                onChange={handleSearchTermChange}
-                className="border p-2 rounded-md w-full border-gray-400"
-              /> */}
             </div>
             <div className="grid grid-cols-3 lg:grid-cols-5 px-3 py-3 gap-4 mt-5 overflow-y-auto border rounded-md m-2 h-auto">
               {clientes &&

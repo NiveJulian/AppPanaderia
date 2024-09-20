@@ -22,15 +22,15 @@ async function appendClient(auth, clientData) {
     const newId = lastId + 1;
 
     // Desestructurar los datos enviados desde el cliente
-    const { nombre, direccion, celular } = clientData;
+    const { uid, nombre, direccion, celular } = clientData;
 
     // Crear una nueva fila con el nuevo ID, nombre y dirección
-    const newRow = [newId, nombre, direccion, celular];
+    const newRow = [newId, nombre, direccion, celular, uid];
 
     // Agregar la nueva fila a la hoja de cálculo
     const appendRes = await sheets.spreadsheets.values.append({
       spreadsheetId: process.env.GOOGLE_SHEETS_ID,
-      range: "Clientes!A2:D", // Ajustar el rango a las columnas correspondientes
+      range: "Clientes!A2:E", // Ajustar el rango a las columnas correspondientes
       valueInputOption: "RAW",
       resource: {
         values: [newRow],
@@ -104,6 +104,39 @@ async function getClientById(auth, id) {
     throw new Error(error.message);
   }
 }
+
+async function getClientByUserID(auth, uid) {
+  try {
+    const sheets = google.sheets({ version: "v4", auth });
+    const res = await sheets.spreadsheets.values.get({
+      spreadsheetId: process.env.GOOGLE_SHEETS_ID,
+      range: "Clientes!A2:E", // Asegúrate de que coincida con tu rango
+    });
+    const rows = res.data.values || [];
+
+    // Filtrar los clientes creados por el usuario con el ID proporcionado
+    const clientRows = rows.filter((row) => row[4] === uid);
+    if (clientRows.length === 0) {
+      return []; // Si no se encuentran clientes
+    }
+
+    // Formatear los datos de los clientes
+    const clientes = clientRows.map((row) => {
+      return {
+        id: row[0],
+        nombre: row[1],
+        direccion: row[2],
+        celular: row[3],
+      };
+    });
+
+    return clientes;
+  } catch (error) {
+    console.log({ error: error.message });
+    throw new Error(error.message);
+  }
+}
+
 
 async function getClientByName(auth, clientName) {
   try {
@@ -190,6 +223,7 @@ module.exports = {
   appendClient,
   getClients,
   getClientById,
+  getClientByUserID,
   getClientByName,
   updateClient, // Añadir la función de actualización
 };

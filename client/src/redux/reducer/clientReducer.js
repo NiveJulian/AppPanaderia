@@ -1,7 +1,8 @@
-import { ALL_CLIENTS, GET_CLIENT_BY_ID } from "../actions/clientActions";
+import { ALL_CLIENTS, GET_CLIENT_BY_ID, GET_CLIENT_BY_USER_ID } from "../actions/clientActions";
 
 const initialState = {
   clientes: [],
+  clientsForUsers: [],
   client: {},
   isAuth: false,
 };
@@ -14,11 +15,16 @@ const clientReducer = (state = initialState, action) => {
         ...state,
         clientes: payload,
       };
-    case GET_CLIENT_BY_ID:
-      return{
+    case GET_CLIENT_BY_USER_ID:
+      return {
         ...state,
-        client: payload
-      }
+        clientsForUsers: payload,
+      };
+    case GET_CLIENT_BY_ID:
+      return {
+        ...state,
+        client: payload,
+      };
     default:
       return state;
   }

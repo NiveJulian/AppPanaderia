@@ -3,6 +3,7 @@ import instance from "../../api/axiosConfig";
 
 export const ALL_CLIENTS = "ALL_CLIENTS";
 export const GET_CLIENT_BY_ID = "GET_CLIENT_BY_ID";
+export const GET_CLIENT_BY_USER_ID = "GET_CLIENT_BY_USER_ID";
 export const CREATE_CLIENT = "CREATE_CLIENT";
 export const UPDATE_CLIENT = "UPDATE_CLIENT";
 
@@ -12,6 +13,19 @@ export const getClientById = (id) => async (dispatch) => {
     // console.log(response);
     dispatch({
       type: GET_CLIENT_BY_ID,
+      payload: response.data,
+    });
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+export const getClientByUserID = (uid) => async (dispatch) => {
+  try {
+    const response = await instance.get(`/api/clients/user/${uid}`);
+    console.log(response);
+    dispatch({
+      type: GET_CLIENT_BY_USER_ID,
       payload: response.data,
     });
   } catch (error) {
@@ -44,7 +58,7 @@ export const createClient = (data) => async (dispatch) => {
 
     if (response.status === 200) {
       toast.success("Cliente creado");
-      dispatch(getClients());
+      dispatch(getClientByUserID(data.uid));
       dispatch({
         type: CREATE_CLIENT,
         payload: response,

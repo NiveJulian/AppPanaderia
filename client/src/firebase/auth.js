@@ -33,11 +33,11 @@ export const doSignInWithGoogle = async () => {
     if (response.ok) {
       toast.success("Ingreso exitoso, redirigiendo..");
       const { theUser } = await response.json();
-      const { uid, email, displayName, photoURL } = result.user;
+      const { photoURL } = result.user;
       const userInfo = {
-        uid,
-        email,
-        name: displayName,
+        uid: theUser.uid,
+        email: theUser.email,
+        name: theUser.nombre,
         picture: photoURL,
         rol: theUser.rol, // Agregamos el rol al userInfo
       };
@@ -55,7 +55,7 @@ export const doSignInWithGoogle = async () => {
 
       setTimeout(() => {
         if (theUser.rol === "vendedor" || theUser.rol === "admin") {
-          window.location.replace(`/dashboard`);
+          window.location.replace(`/dashboard/${theUser.uid}`);
         } else {
           window.location.replace("/");
         }
@@ -126,7 +126,7 @@ export const doSignInWithEmailAndPassword = async (email, password) => {
 
       setTimeout(() => {
         if (sellerData.rol === "seller" || sellerData.rol === "admin") {
-          window.location.replace("/dashboard/");
+          window.location.replace(`/dashboard/${sellerData.uid}`);
         } else {
           window.location.replace("/");
         }

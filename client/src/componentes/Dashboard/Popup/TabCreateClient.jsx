@@ -7,7 +7,7 @@ import {
   updateClient,
 } from "../../../redux/actions/clientActions";
 
-export default function TabCreateClient({ isOpen, onClose, cliente }) {
+export default function TabCreateClient({ isOpen, onClose, cliente, uid }) {
   const dispatch = useDispatch();
   const [formData, setFormData] = useState({
     nombre: "",
@@ -52,6 +52,7 @@ export default function TabCreateClient({ isOpen, onClose, cliente }) {
             nombre: formData.nombre,
             direccion: formData.direccion,
             celular: formData.celular,
+            uid,
           };
 
           dispatch(updateClient(cliente.id, updateRow));
@@ -60,6 +61,7 @@ export default function TabCreateClient({ isOpen, onClose, cliente }) {
             nombre: formData.nombre,
             direccion: formData.direccion,
             celular: formData.celular,
+            uid,
           };
           dispatch(createClient(newRow));
         }

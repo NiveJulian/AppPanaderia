@@ -4,6 +4,7 @@ const {
   getClients,
   getClientById,
   updateClient,
+  getClientByUserID,
 } = require("../Controllers/sheets/clientController");
 const { authorize } = require("../Controllers/sheets/sheetsController");
 const clientRoutes = Router();
@@ -36,6 +37,21 @@ clientRoutes.get("/:id", async (req, res) => {
     const { id } = req.params;
     const auth = await authorize();
     const client = await getClientById(auth, id);
+    if (!client) {
+      return res.status(404).json({ message: "Cliente no encontrado" });
+    }
+    res.status(200).json(client);
+  } catch (error) {
+    console.log({ error: error.message });
+    res.status(500).send(error.message);
+  }
+});
+
+clientRoutes.get("/user/:uid", async (req, res) => {
+  try {
+    const { uid } = req.params;
+    const auth = await authorize();
+    const client = await getClientByUserID(auth, uid);
     if (!client) {
       return res.status(404).json({ message: "Cliente no encontrado" });
     }

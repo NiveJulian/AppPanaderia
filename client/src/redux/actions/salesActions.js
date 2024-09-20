@@ -8,6 +8,7 @@ export const GET_SALE_BY_ID = "GET_SALE_BY_ID";
 export const GET_SALE_BY_USER_ID = "GET_SALE_BY_USER_ID";
 export const GET_SALE_BY_CLIENT_ID = "GET_SALE_BY_CLIENT_ID";
 export const GET_SALE_BY_WEEKLY = "GET_SALE_BY_WEEKLY";
+export const GET_SALE_BY_WEEKLY_BY_USER = "GET_SALE_BY_WEEKLY_BY_USER";
 export const CREATED_SALE = "CREATED_SALE";
 export const CREATED_SALE_DASHBOARD = "CREATED_SALE_DASHBOARD";
 export const DELETE_SALE_ROW = "DELETE_SALE_ROW";
@@ -16,7 +17,6 @@ export const GET_SALE_CHANGE_STATE = "GET_SALE_CHANGE_STATE";
 export const getSaleInfo = (id) => async (dispatch) => {
   try {
     const res = await instance.get(`/api/sheets/sale/${id}`);
-    console.log(res)
     dispatch({
       type: GET_SALE_BY_ID,
       payload: res.data,
@@ -64,9 +64,21 @@ export const getSaleByUserID = (uid) => async (dispatch) => {
   try {
     const res = await instance.get(`/api/sheets/sales/${uid}`);
     if (res.status === 200) {
+      const salesData = res.data;
+
+    // Filtrar las ventas para que solo haya una por cada ID
+    const uniqueSales = Object.values(
+      salesData.reduce((acc, sale) => {
+        acc[sale.id] = sale; // Si el ID ya existe, lo sobrescribe
+        return acc;
+      }, {})
+    );
+
+    // Invertir el orden para que la más reciente esté al principio
+    const reversedSales = uniqueSales.reverse();
       dispatch({
         type: GET_SALE_BY_USER_ID,
-        payload: res.data,
+        payload: reversedSales,
       });
     }
   } catch (error) {
@@ -77,7 +89,6 @@ export const getSaleByUserID = (uid) => async (dispatch) => {
 export const getSaleByClientID = (id) => async (dispatch) => {
   try {
     const res = await instance.get(`/api/sheets/sales/client/${id}`);
-    console.log(res)
     if (res.status === 200) {
       dispatch({
         type: GET_SALE_BY_CLIENT_ID,
@@ -95,6 +106,20 @@ export const getSaleByWeekly = () => async (dispatch) => {
     if (res.status === 200) {
       dispatch({
         type: GET_SALE_BY_WEEKLY,
+        payload: res.data.total,
+      });
+    }
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+export const getSaleByWeeklyByUser = (uid) => async (dispatch) => {
+  try {
+    const res = await instance.get(`/api/sheets/sales/weekly/${uid}`);
+    if (res.status === 200) {
+      dispatch({
+        type: GET_SALE_BY_WEEKLY_BY_USER,
         payload: res.data.total,
       });
     }

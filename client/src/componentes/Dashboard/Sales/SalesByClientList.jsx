@@ -3,10 +3,11 @@ import { useDispatch, useSelector } from "react-redux";
 import {
   getSaleByClientID,
   getSaleByWeekly,
+  getSaleByWeeklyByUser,
 } from "../../../redux/actions/salesActions";
 import Loader from "../../Loader/Loader";
 
-const SalesByClientList = () => {
+const SalesByClientList = ({ idUser }) => {
   const salesWeekly = useSelector((state) => state.cart.salesWeekly);
   const saleInfo = useSelector((state) => state.cart.saleInfo);
   const dispatch = useDispatch();
@@ -56,8 +57,8 @@ const SalesByClientList = () => {
   }, [saleInfo, generatingTicket]);
 
   useEffect(() => {
-    dispatch(getSaleByWeekly());
-  }, [dispatch]);
+    dispatch(getSaleByWeeklyByUser(idUser));
+  }, [dispatch, idUser]);
 
   return (
     <div className="w-full p-4">
@@ -69,26 +70,30 @@ const SalesByClientList = () => {
 
       <div className="flex flex-row gap-4 md:flex-col md:flex-wrap md:gap-6">
         {salesWeekly &&
-          salesWeekly.map((sale) => (
-            <div
-              key={sale.id}
-              className="border border-teal-500 text-black bg-white rounded-lg shadow-lg p-4 flex flex-col justify-between w-full md:w-80 lg:w-96"
-            >
-              <h1 className="text-center font-bold uppercase bg-teal-300 p-2 rounded-t-lg">
-                {sale.nombre}
-              </h1>
-              <p className="font-bold text-center mt-2">Total</p>
-              <span className="p-2 text-center w-full font-semibold text-xl">
-                ${sale.totalSales}
-              </span>
-              <button
-                onClick={() => handleTicketByWP(sale.id)}
-                className="text-white mt-4 border border-transparent bg-gray-600 p-2 rounded-md hover:bg-gray-700 transition-colors"
+          salesWeekly.map((sale) => {
+            return (
+              <div
+                key={sale.id}
+                className="border border-teal-500 text-black bg-white rounded-lg shadow-lg p-4 flex flex-col justify-between w-full md:w-80 lg:w-96"
               >
-                Generar ticket
-              </button>
-            </div>
-          ))}
+                <h1 className="text-center font-bold uppercase bg-teal-300 p-2 rounded-t-lg">
+                  {sale.nombre}
+                </h1>
+                <p className="font-bold text-center mt-2">Total</p>
+                <span className="p-2 text-center w-full font-semibold text-xl">
+                  ${sale.totalSales}
+                </span>
+                {sale.celular && sale.celular.trim() !== "" && (
+                  <button
+                    onClick={() => handleTicketByWP(sale.id)}
+                    className="text-white mt-4 border border-transparent bg-gray-600 p-2 rounded-md hover:bg-gray-700 transition-colors"
+                  >
+                    Generar ticket
+                  </button>
+                )}
+              </div>
+            );
+          })}
       </div>
     </div>
   );

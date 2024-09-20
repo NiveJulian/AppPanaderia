@@ -2,7 +2,6 @@ import { Link } from "react-router-dom";
 import { doSignOut } from "../../../firebase/auth";
 
 export const Nav = ({ user, showNav }) => {
-  console.log(user);
   return (
     <div
       className={`space-y-6 md:space-y-10 w-full mt-10 ${
@@ -34,7 +33,7 @@ export const Nav = ({ user, showNav }) => {
       </div>
       <div id="menu" className="flex flex-col w-full space-y-2">
         <Link
-          to={"/dashboard"}
+          to={`/dashboard/${user.uid}`}
           className="text-sm font-medium text-white py-2 px-2 hover:bg-darkBrown hover:text-white rounded-md transition duration-150 ease-in-out"
         >
           <svg
@@ -47,25 +46,6 @@ export const Nav = ({ user, showNav }) => {
           </svg>
           <span className="">Control</span>
         </Link>
-        {/* <Link
-          to={"/dashboard/balance"}
-          className="text-sm font-medium text-white py-2 px-2 hover:bg-darkBrown hover:text-white rounded-md transition duration-150 ease-in-out"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="currentColor"
-            className="w-6 h-6 fill-current inline-block"
-          >
-            <path
-              fillRule="evenodd"
-              d="M6.32 1.827a49.255 49.255 0 0 1 11.36 0c1.497.174 2.57 1.46 2.57 2.93V19.5a3 3 0 0 1-3 3H6.75a3 3 0 0 1-3-3V4.757c0-1.47 1.073-2.756 2.57-2.93ZM7.5 11.25a.75.75 0 0 1 .75-.75h.008a.75.75 0 0 1 .75.75v.008a.75.75 0 0 1-.75.75H8.25a.75.75 0 0 1-.75-.75v-.008Zm.75 1.5a.75.75 0 0 0-.75.75v.008c0 .414.336.75.75.75h.008a.75.75 0 0 0 .75-.75V13.5a.75.75 0 0 0-.75-.75H8.25Zm-.75 3a.75.75 0 0 1 .75-.75h.008a.75.75 0 0 1 .75.75v.008a.75.75 0 0 1-.75.75H8.25a.75.75 0 0 1-.75-.75v-.008Zm.75 1.5a.75.75 0 0 0-.75.75v.008c0 .414.336.75.75.75h.008a.75.75 0 0 0 .75-.75V18a.75.75 0 0 0-.75-.75H8.25Zm1.748-6a.75.75 0 0 1 .75-.75h.007a.75.75 0 0 1 .75.75v.008a.75.75 0 0 1-.75.75h-.007a.75.75 0 0 1-.75-.75v-.008Zm.75 1.5a.75.75 0 0 0-.75.75v.008c0 .414.335.75.75.75h.007a.75.75 0 0 0 .75-.75V13.5a.75.75 0 0 0-.75-.75h-.007Zm-.75 3a.75.75 0 0 1 .75-.75h.007a.75.75 0 0 1 .75.75v.008a.75.75 0 0 1-.75.75h-.007a.75.75 0 0 1-.75-.75v-.008Zm.75 1.5a.75.75 0 0 0-.75.75v.008c0 .414.335.75.75.75h.007a.75.75 0 0 0 .75-.75V18a.75.75 0 0 0-.75-.75h-.007Zm1.754-6a.75.75 0 0 1 .75-.75h.008a.75.75 0 0 1 .75.75v.008a.75.75 0 0 1-.75.75h-.008a.75.75 0 0 1-.75-.75v-.008Zm.75 1.5a.75.75 0 0 0-.75.75v.008c0 .414.336.75.75.75h.008a.75.75 0 0 0 .75-.75V13.5a.75.75 0 0 0-.75-.75h-.008Zm-.75 3a.75.75 0 0 1 .75-.75h.008a.75.75 0 0 1 .75.75v.008a.75.75 0 0 1-.75.75h-.008a.75.75 0 0 1-.75-.75v-.008Zm.75 1.5a.75.75 0 0 0-.75.75v.008c0 .414.336.75.75.75h.008a.75.75 0 0 0 .75-.75V18a.75.75 0 0 0-.75-.75h-.008Zm1.748-6a.75.75 0 0 1 .75-.75h.008a.75.75 0 0 1 .75.75v.008a.75.75 0 0 1-.75.75h-.008a.75.75 0 0 1-.75-.75v-.008Zm.75 1.5a.75.75 0 0 0-.75.75v.008c0 .414.336.75.75.75h.008a.75.75 0 0 0 .75-.75V13.5a.75.75 0 0 0-.75-.75h-.008Zm-8.25-6A.75.75 0 0 1 8.25 6h7.5a.75.75 0 0 1 .75.75v.75a.75.75 0 0 1-.75.75h-7.5a.75.75 0 0 1-.75-.75v-.75Zm9 9a.75.75 0 0 0-1.5 0V18a.75.75 0 0 0 1.5 0v-2.25Z"
-              clipRule="evenodd"
-            />
-          </svg>
-
-          <span className=""> Balance</span>
-        </Link> */}
         <Link
           to={"/dashboard/products"}
           className="text-sm font-medium text-white py-2 px-2 hover:bg-darkBrown hover:text-white rounded-md transition duration-150 ease-in-out"
@@ -86,7 +66,7 @@ export const Nav = ({ user, showNav }) => {
           <span className="">Productos</span>
         </Link>
         <Link
-          to={"/dashboard/sales"}
+          to={`/dashboard/sales/${user.uid}`}
           className="text-sm font-medium text-white py-2 px-2 hover:bg-darkBrown hover:text-white rounded-md transition duration-150 ease-in-out"
         >
           <svg
@@ -105,26 +85,30 @@ export const Nav = ({ user, showNav }) => {
           <span className="">Ventas</span>
         </Link>
 
-        <Link
-          to={"/dashboard/users"}
-          className="text-sm font-medium text-white py-2 px-2 hover:bg-darkBrown hover:text-white rounded-md transition duration-150 ease-in-out"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="currentColor"
-            className="w-6 h-6 fill-current inline-block"
+        {user.rol !== "seller" ? (
+          <Link
+            to={"/dashboard/users"}
+            className="text-sm font-medium text-white py-2 px-2 hover:bg-darkBrown hover:text-white rounded-md transition duration-150 ease-in-out"
           >
-            <path
-              fillRule="evenodd"
-              d="M8.25 6.75a3.75 3.75 0 1 1 7.5 0 3.75 3.75 0 0 1-7.5 0ZM15.75 9.75a3 3 0 1 1 6 0 3 3 0 0 1-6 0ZM2.25 9.75a3 3 0 1 1 6 0 3 3 0 0 1-6 0ZM6.31 15.117A6.745 6.745 0 0 1 12 12a6.745 6.745 0 0 1 6.709 7.498.75.75 0 0 1-.372.568A12.696 12.696 0 0 1 12 21.75c-2.305 0-4.47-.612-6.337-1.684a.75.75 0 0 1-.372-.568 6.787 6.787 0 0 1 1.019-4.38Z"
-              clipRule="evenodd"
-            />
-            <path d="M5.082 14.254a8.287 8.287 0 0 0-1.308 5.135 9.687 9.687 0 0 1-1.764-.44l-.115-.04a.563.563 0 0 1-.373-.487l-.01-.121a3.75 3.75 0 0 1 3.57-4.047ZM20.226 19.389a8.287 8.287 0 0 0-1.308-5.135 3.75 3.75 0 0 1 3.57 4.047l-.01.121a.563.563 0 0 1-.373.486l-.115.04c-.567.2-1.156.349-1.764.441Z" />
-          </svg>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+              className="w-6 h-6 fill-current inline-block"
+            >
+              <path
+                fillRule="evenodd"
+                d="M8.25 6.75a3.75 3.75 0 1 1 7.5 0 3.75 3.75 0 0 1-7.5 0ZM15.75 9.75a3 3 0 1 1 6 0 3 3 0 0 1-6 0ZM2.25 9.75a3 3 0 1 1 6 0 3 3 0 0 1-6 0ZM6.31 15.117A6.745 6.745 0 0 1 12 12a6.745 6.745 0 0 1 6.709 7.498.75.75 0 0 1-.372.568A12.696 12.696 0 0 1 12 21.75c-2.305 0-4.47-.612-6.337-1.684a.75.75 0 0 1-.372-.568 6.787 6.787 0 0 1 1.019-4.38Z"
+                clipRule="evenodd"
+              />
+              <path d="M5.082 14.254a8.287 8.287 0 0 0-1.308 5.135 9.687 9.687 0 0 1-1.764-.44l-.115-.04a.563.563 0 0 1-.373-.487l-.01-.121a3.75 3.75 0 0 1 3.57-4.047ZM20.226 19.389a8.287 8.287 0 0 0-1.308-5.135 3.75 3.75 0 0 1 3.57 4.047l-.01.121a.563.563 0 0 1-.373.486l-.115.04c-.567.2-1.156.349-1.764.441Z" />
+            </svg>
 
-          <span className="">Vendedores</span>
-        </Link>
+            <span className="">Vendedores</span>
+          </Link>
+        ) : (
+          ""
+        )}
         {/* <Link
           to={"/dashboard/support"}
           className="text-sm font-medium text-white py-2 px-2 hover:bg-darkBrown hover:text-white rounded-md transition duration-150 ease-in-out"

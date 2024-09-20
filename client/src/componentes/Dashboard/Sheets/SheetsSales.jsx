@@ -85,7 +85,7 @@ const SheetsSales = ({ data, onViewSale, toggleDelete, changeState }) => {
               </div>
               <div className="w-full">
                 <p>
-                  <strong>Cliente:</strong> {prod.cliente}
+                  <strong>Cliente:</strong> {prod.client?.nombre}
                 </p>
                 <p>
                   <strong>Total:</strong> ${prod.total}

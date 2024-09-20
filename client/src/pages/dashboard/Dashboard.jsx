@@ -1,13 +1,18 @@
 import { useDispatch, useSelector } from "react-redux";
 import { Layout } from "../../componentes/Dashboard/Layout/Layout";
 import { useEffect, useState } from "react";
-import { getClients } from "../../redux/actions/clientActions";
-import { Link } from "react-router-dom";
+import {
+  getClientByUserID,
+  getClients,
+} from "../../redux/actions/clientActions";
+import { Link, useParams } from "react-router-dom";
 import TabCreateClient from "../../componentes/Dashboard/Popup/TabCreateClient";
 
 const Dashboard = () => {
   const isAuth = useSelector((state) => state.auth.isAuth);
-  const clientes = useSelector((state) => state.client.clientes);
+  const clientsForUsers = useSelector((state) => state.client.clientsForUsers);
+  const { uid } = useParams();
+  const user = useSelector((state) => state.auth.user);
   const dispatch = useDispatch();
 
   const [activeForm, setActiveForm] = useState(false);
@@ -17,13 +22,17 @@ const Dashboard = () => {
   };
 
   useEffect(() => {
-    dispatch(getClients());
-  }, [dispatch]);
+    dispatch(getClientByUserID(uid));
+  }, [dispatch, uid]);
 
   return (
     <Layout isAuth={isAuth}>
       {activeForm && (
-        <TabCreateClient isOpen={activeForm} onClose={toggleModal} />
+        <TabCreateClient
+          uid={uid}
+          isOpen={activeForm}
+          onClose={toggleModal}
+        />
       )}
       <div className="flex justify-between items-center">
         <h1 className="text-xl text-white">Panel de control</h1>
@@ -43,8 +52,8 @@ const Dashboard = () => {
               </div>
             </div>
             <div className="grid grid-cols-3 lg:grid-cols-5 px-3 py-3 gap-4 mt-5 overflow-y-auto border rounded-md m-2 h-auto">
-              {clientes &&
-                clientes?.map((client, i) => {
+              {clientsForUsers &&
+                clientsForUsers?.map((client, i) => {
                   return (
                     <Link
                       key={i}

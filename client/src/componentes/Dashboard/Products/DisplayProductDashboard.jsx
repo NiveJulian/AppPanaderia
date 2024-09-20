@@ -13,7 +13,7 @@ import {
 import Loader from "../../Loader/Loader";
 import TabCreateClient from "../Popup/TabCreateClient";
 
-const DisplayProductDashboard = ({ products, client }) => {
+const DisplayProductDashboard = ({ products, client, user }) => {
   const cartItems = useSelector((state) => state.cart.cartItems);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(false);
@@ -57,6 +57,7 @@ const DisplayProductDashboard = ({ products, client }) => {
       })),
       idCliente: id,
       total: calculateTotal(),
+      uid: user.uid,
     };
     dispatch(createSaleDashboard(venta))
       .then(() => {

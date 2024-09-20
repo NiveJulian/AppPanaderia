@@ -9,6 +9,7 @@ import Login from "./pages/dashboard/Login";
 import Dashboard from "./pages/dashboard/Dashboard";
 import Products from "./pages/dashboard/Products";
 import Sales from "./pages/dashboard/Sales";
+import SalesForSeller from "./pages/dashboard/SalesForSeller";
 import Support from "./pages/dashboard/Support";
 import Users from "./pages/dashboard/Users";
 import Error from "./pages/dashboard/Error";
@@ -50,10 +51,11 @@ function App() {
         <Route path="/" element={<Login />} />
         {isAuth ? (
           <Route>
-            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/dashboard/:uid" element={<Dashboard />} />
             <Route path="/dashboard/client/:id" element={<DashboardClientId />} />
             <Route path="/dashboard/products" element={<Products />} />
             <Route path="/dashboard/sales" element={<Sales />} />
+            <Route path="/dashboard/sales/:uid" element={<SalesForSeller />} />
             <Route path="/dashboard/users" element={<Users />} />
             <Route path="/dashboard/balance" element={<Balance />} />
             <Route path="/dashboard/support" element={<Support />} />

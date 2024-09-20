@@ -14,6 +14,7 @@ import {
   GET_SALE_BY_ID,
   GET_SALE_BY_USER_ID,
   GET_SALE_BY_WEEKLY,
+  GET_SALE_BY_WEEKLY_BY_USER,
   GET_SALES,
 } from "../actions/salesActions";
 
@@ -127,7 +128,7 @@ const cartReducer = (state = initialState, action) => {
     case GET_SALE_BY_USER_ID:
       return {
         ...state,
-        saleInfo: payload,
+        sales: payload,
       };
 
     case GET_SALE_BY_CLIENT_ID:
@@ -136,6 +137,11 @@ const cartReducer = (state = initialState, action) => {
         saleInfo: payload,
       };
     case GET_SALE_BY_WEEKLY:
+      return {
+        ...state,
+        salesWeekly: payload,
+      };
+    case GET_SALE_BY_WEEKLY_BY_USER:
       return {
         ...state,
         salesWeekly: payload,

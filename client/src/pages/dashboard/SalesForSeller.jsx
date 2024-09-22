@@ -3,6 +3,7 @@ import { Layout } from "../../componentes/Dashboard/Layout/Layout";
 import { useDispatch, useSelector } from "react-redux";
 import {
   getSaleByUserID,
+  getSaleByWeeklyByUser,
   getSaleChangeState,
   getSaleInfo,
 } from "../../redux/actions/salesActions";
@@ -26,6 +27,7 @@ const SalesForSeller = () => {
   const isAuth = useSelector((state) => state.auth.isAuth);
   const sales = useSelector((state) => state.cart.sales);
   const sale = useSelector((state) => state.cart.saleInfo);
+  const salesWeekly = useSelector((state) => state.cart.salesWeekly);
 
   const isEmpty = (obj) => Object.keys(obj).length === 0;
 
@@ -53,20 +55,23 @@ const SalesForSeller = () => {
   }, [sale]);
 
   useEffect(() => {
-    dispatch(getSaleByUserID(uid));
-  }, [dispatch, uid]);
+    if (isLoading) {
+      dispatch(getSaleByUserID(uid));
+      dispatch(getSaleByWeeklyByUser(uid));
+    }
+  }, [uid, isLoading, dispatch]);
 
   const filteredSales = sales.filter((sale) => sale.estadoPago !== "Anulado");
-  // Filtrar las ventas
+
   const searchedSales = filteredSales?.filter((sale) => {
     const lowercasedFilter = searchTerm.toLowerCase();
     return (
-      sale.id.toString().toLowerCase().includes(lowercasedFilter) ||
-      sale.cliente.toLowerCase().includes(lowercasedFilter) ||
-      sale.total.toString().toLowerCase().includes(lowercasedFilter) ||
-      sale.fecha.toLowerCase().includes(lowercasedFilter) ||
-      sale.hora.toLowerCase().includes(lowercasedFilter) ||
-      sale.pago.toLowerCase().includes(lowercasedFilter)
+      sale?.id?.toString().toLowerCase().includes(lowercasedFilter) ||
+      sale?.cliente?.toLowerCase().includes(lowercasedFilter) ||
+      sale?.total?.toString().toLowerCase().includes(lowercasedFilter) ||
+      sale?.fecha?.toLowerCase().includes(lowercasedFilter) ||
+      sale?.hora?.toLowerCase().includes(lowercasedFilter) ||
+      sale?.pago?.toLowerCase().includes(lowercasedFilter)
     );
   });
 
@@ -137,7 +142,7 @@ const SalesForSeller = () => {
           </div>
           <div className="lg:h-screen overflow-y-auto border border-gray-300 p-2 rounded-md">
             <div className="mt-2">
-              <SalesByClientList idUser={uid} />
+              <SalesByClientList saleInfo={sale} salesWeekly={salesWeekly} />
             </div>
           </div>
         </div>

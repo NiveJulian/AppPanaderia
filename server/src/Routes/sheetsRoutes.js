@@ -121,23 +121,7 @@ sheetsRouter.get("/sales/weekly", async (req, res) => {
   }
 });
 
-sheetsRouter.get("/sales/weekly/:uid", async (req, res) => {
-  try {
-    const { uid } = req.params;
 
-    const auth = await authorize();
-    const weeklySalesTotal = await getWeeklySalesByUser(auth, uid);
-    if (!weeklySalesTotal) {
-      return res
-        .status(404)
-        .json({ error: "No se encontraron ventas en la semana" });
-    }
-
-    res.status(200).json({ total: weeklySalesTotal });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
 
 sheetsRouter.get("/sale/:id", async (req, res) => {
   try {
@@ -209,6 +193,24 @@ sheetsRouter.get("/sales/:uid", async (req, res) => {
       message: "Error obteniendo ventas por UID",
       error: error.message,
     });
+  }
+});
+
+sheetsRouter.get("/sales/weekly/:uid", async (req, res) => {
+  try {
+    const { uid } = req.params;
+
+    const auth = await authorize();
+    const weeklySalesTotal = await getWeeklySalesByUser(auth, uid);
+    if (!weeklySalesTotal) {
+      return res
+        .status(404)
+        .json({ error: "No se encontraron ventas en la semana" });
+    }
+
+    res.status(200).json({ total: weeklySalesTotal });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
 });
 

@@ -440,42 +440,66 @@ async function getSaleByClientId(auth, id) {
   }
 }
 
+async function preloadData(auth) {
+  const { products } = await getSheetData(auth);  // Obtener solo los productos del resultado
+  const clients = await getClients(auth);         // Obtener todos los clientes
+  return { products, clients };
+}
+
+function findClientById(clients, clientId) {
+  return clients.find(client => client.id === clientId) || null;
+}
+
+function findProductById(products, productId) {
+  if (!Array.isArray(products)) {
+    console.error("Error: products no es un array");
+    return null;
+  }
+  return products.find(product => product.id === productId) || null;
+}
+
 async function getSaleByUserId(auth, uid) {
   try {
     const sheets = google.sheets({ version: "v4", auth });
     const res = await sheets.spreadsheets.values.get({
       spreadsheetId: process.env.GOOGLE_SHEETS_ID,
-      range: "Ventas!A2:K", // Ajusta el rango según tu hoja de ventas
+      range: "Ventas!A2:K",
     });
 
     const rows = res.data.values || [];
 
     // Filtrar las ventas que coinciden con el UID del usuario
-    const salesForUser = rows.filter((row) => row[10] === uid);
+    const salesForUser = rows.filter((row) => row[10]?.trim() === uid.trim());
+
+    if (!salesForUser.length) {
+      console.log(`No se encontraron ventas para el UID: ${uid}`);
+      return [];
+    }
+
+    // Pre-cargar productos y clientes
+    const { products, clients } = await preloadData(auth);
 
     // Crear un objeto para acumular las ventas por ID de venta
     const salesSummary = {};
 
-    // Procesar cada venta
-    await Promise.all(
-      salesForUser.map(async (row) => {
+    // Procesar cada venta sin llamadas asíncronas
+    salesForUser.forEach((row) => {
+      try {
         const saleId = row[0];
         const productId = row[1];
-        const client = await getClientById(auth, row[2]);
-        const quantity = Number(row[3]);
-        const total = Number(row[7]); // Asumiendo que el total es un número en la columna 7
+        const client = findClientById(clients, row[2]); // Buscar cliente en la pre-carga
+        const quantity = Number(row[3]) || 0;
+        const total = isNaN(Number(row[7])) ? 0 : Number(row[7]);
         const paymentMethod = row[5];
         const estadoPago = row[6];
         const fecha = row[8];
         const hora = row[9];
-        const product = await getSheetDataById(Number(productId), auth); // Obtener la información del producto
+        const product = findProductById(products, Number(productId)); // Buscar producto en la pre-carga
 
-        // Si el ID de la venta ya está en el objeto, suma el total
         if (salesSummary[saleId]) {
           salesSummary[saleId].total += total;
           salesSummary[saleId].quantity += quantity;
         } else {
-          // Si es la primera vez que encontramos este ID, crear la entrada
           salesSummary[saleId] = {
             id: saleId,
             productId,
@@ -489,8 +513,10 @@ async function getSaleByUserId(auth, uid) {
             product,
           };
         }
-      })
-    );
+      } catch (error) {
+        console.error(`Error procesando venta: ${row[0]}`, error);
+      }
+    });
 
     // Convertir el objeto salesSummary en un array
     const salesData = Object.values(salesSummary);
@@ -518,99 +544,67 @@ async function getWeeklySalesByUser(auth, uid) {
       return []; // No hay ventas
     }
 
+    // Filtrar las ventas del usuario específico
     const salesForUser = salesRows.filter((row) => row[10] === uid);
 
-
-    // Función para convertir fecha en formato "dd/mm/yyyy" a un objeto Date
+    // Función para convertir fecha en formato "dd/mm/yyyy" a objeto Date
     function parseDate(dateString) {
       const [day, month, year] = dateString.split("/");
       return new Date(`${year}-${month}-${day}`);
     }
 
-    // Ordenar las ventas por fecha
-    salesForUser.sort((a, b) => parseDate(a[8]) - parseDate(b[8]));
-
-    // Crear una lista para almacenar los resultados
-    const weeklySalesData = [];
-
-    let currentStartDate = parseDate(salesForUser[0][8]); // La primera fecha de venta
-    currentStartDate.setHours(0, 0, 0, 0); // Ajustar a medianoche para precisión
-    let currentEndDate = new Date(currentStartDate);
-    currentEndDate.setDate(currentEndDate.getDate() + 6); // Intervalo de 7 días
-
-    // Crear un objeto para almacenar el total de ventas por cliente y por semana
-    const weeklySalesByClient = {};
-
-    // Iterar sobre las ventas para agrupar y sumar los totales en intervalos de 7 días
-    for (const row of salesForUser) {
-      const saleDate = parseDate(row[8]); // Fecha de la venta
-      const totalSale = parseFloat(row[7]); // Total de la venta
-      const clientId = row[2];
-
-      // Verificar si la fecha de la venta está dentro del intervalo actual
-      if (saleDate >= currentStartDate && saleDate <= currentEndDate) {
-        if (!weeklySalesByClient[clientId]) {
-          weeklySalesByClient[clientId] = {};
-        }
-        const weekKey = `${currentStartDate.toISOString()}-${currentEndDate.toISOString()}`;
-
-        if (!weeklySalesByClient[clientId][weekKey]) {
-          weeklySalesByClient[clientId][weekKey] = 0;
-        }
-
-        weeklySalesByClient[clientId][weekKey] += totalSale;
-      } else {
-        // Guardar los datos del intervalo actual en el array
-        for (const clientId in weeklySalesByClient) {
-          for (const weekKey in weeklySalesByClient[clientId]) {
-            const clientData = await getClientById(auth, clientId); // Obtener datos del cliente
-
-            weeklySalesData.push({
-              ...clientData, // Añadir los datos del cliente
-              weekStart: weekKey.split("-")[0],
-              weekEnd: weekKey.split("-")[1],
-              totalSales: weeklySalesByClient[clientId][weekKey],
-            });
-          }
-        }
-
-        // Reiniciar el intervalo
-        currentStartDate = parseDate(row[8]);
-        currentStartDate.setHours(0, 0, 0, 0);
-        currentEndDate = new Date(currentStartDate);
-        currentEndDate.setDate(currentEndDate.getDate() + 6);
-
-        // Acumular el total de ventas para el nuevo intervalo
-        if (!weeklySalesByClient[clientId]) {
-          weeklySalesByClient[clientId] = {};
-        }
-
-        const weekKey = `${currentStartDate.toISOString()}-${currentEndDate.toISOString()}`;
-
-        if (!weeklySalesByClient[clientId][weekKey]) {
-          weeklySalesByClient[clientId][weekKey] = 0;
-        }
-
-        weeklySalesByClient[clientId][weekKey] += totalSale;
-      }
+    // Función para obtener el inicio de la semana (Lunes)
+    function getStartOfWeek(date) {
+      const day = date.getDay();
+      const diff = date.getDate() - day + (day === 0 ? -6 : 1); // Ajustar para que el Lunes sea el primer día
+      const monday = new Date(date.setDate(diff));
+      monday.setHours(0, 0, 0, 0); // Asegurar que es a medianoche
+      return monday;
     }
 
-    // Guardar los datos del último intervalo en el array
-    for (const clientId in weeklySalesByClient) {
-      for (const weekKey in weeklySalesByClient[clientId]) {
-        const clientData = await getClientById(auth, clientId); // Obtener datos del cliente
+    // Agrupar las ventas por cliente y semana
+    const weeklySalesByClient = {};
 
-        // Extraer la parte inicial y final del weekKey
+    for (const row of salesForUser) {
+      const saleDate = parseDate(row[8]);
+      const totalSale = parseFloat(row[7]);
+      const clientId = row[2];
+
+      // Obtener el lunes de la semana de la venta
+      const startOfWeek = getStartOfWeek(new Date(saleDate));
+      const endOfWeek = new Date(startOfWeek);
+      endOfWeek.setDate(endOfWeek.getDate() + 6); // Obtener el domingo
+
+      const weekKey = `${startOfWeek.toISOString()}-${endOfWeek.toISOString()}`;
+
+      if (!weeklySalesByClient[clientId]) {
+        weeklySalesByClient[clientId] = {};
+      }
+
+      if (!weeklySalesByClient[clientId][weekKey]) {
+        weeklySalesByClient[clientId][weekKey] = 0;
+      }
+
+      // Sumar la venta al total de la semana para el cliente
+      weeklySalesByClient[clientId][weekKey] += totalSale;
+    }
+
+    // Crear la lista de resultados con los datos del cliente y las ventas por semana
+    const weeklySalesData = [];
+
+    for (const clientId in weeklySalesByClient) {
+      const clientData = await getClientById(auth, clientId); // Obtener los datos del cliente una vez por cliente
+
+      for (const weekKey in weeklySalesByClient[clientId]) {
         const [startDate, endDate] = weekKey.split("Z-");
 
-        // Obtener solo el día de inicio y final
-        const weekStart = startDate.split("-")[2].split("T")[0]; // Día de weekStart
-        const weekEnd = endDate.split("-")[2].split("T")[0]; // Día de weekEnd
+        const weekStart = startDate.split("T")[0]; // Solo la fecha sin hora
+        const weekEnd = endDate.split("T")[0];
 
         weeklySalesData.push({
           ...clientData, // Añadir los datos del cliente
-          weekStart, // Día de la fecha inicial
-          weekEnd, // Día de la fecha final
+          weekStart,
+          weekEnd,
           totalSales: weeklySalesByClient[clientId][weekKey],
         });
       }

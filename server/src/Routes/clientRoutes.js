@@ -47,14 +47,27 @@ clientRoutes.get("/:id", async (req, res) => {
   }
 });
 
+let salesCache = {};
+
 clientRoutes.get("/user/:uid", async (req, res) => {
+  const { uid } = req.params;
+
+  // Verifica si ya tenemos los datos en la caché
+  if (salesCache[uid]) {
+    return res.status(200).json(salesCache[uid]);
+  }
+
   try {
-    const { uid } = req.params;
     const auth = await authorize();
     const client = await getClientByUserID(auth, uid);
     if (!client) {
       return res.status(404).json({ message: "Cliente no encontrado" });
     }
+
+    // Almacenar los datos en la caché por un período de tiempo
+    salesCache[uid] = client;
+    setTimeout(() => delete salesCache[uid], 60000); // Limpiar la caché después de 1 minuto
+
     res.status(200).json(client);
   } catch (error) {
     console.log({ error: error.message });

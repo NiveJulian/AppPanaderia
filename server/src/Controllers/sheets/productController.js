@@ -70,7 +70,7 @@ async function getSheetDataById(id, auth) {
 
 async function appendRow(auth, rowData) {
   const sheets = google.sheets({ version: "v4", auth });
-  const { rows, lastId } = await getSheetData(auth);
+  const { lastId } = await getSheetData(auth);
   const newId = lastId + 1;
   const { nombre, stock, precio } = rowData;
   const publicadoValue = "no"; // Nueva variable para el valor de publicado

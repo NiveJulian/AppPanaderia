@@ -7,9 +7,7 @@ import {
 } from "../../../redux/actions/salesActions";
 import Loader from "../../Loader/Loader";
 
-const SalesByClientList = ({ idUser }) => {
-  const salesWeekly = useSelector((state) => state.cart.salesWeekly);
-  const saleInfo = useSelector((state) => state.cart.saleInfo);
+const SalesByClientList = ({ saleInfo, salesWeekly }) => {
   const dispatch = useDispatch();
   const [loading, setLoading] = useState(false);
   const [generatingTicket, setGeneratingTicket] = useState(false);
@@ -55,10 +53,6 @@ const SalesByClientList = ({ idUser }) => {
       window.open(enlaceWhatsApp, "_blank");
     }
   }, [saleInfo, generatingTicket]);
-
-  useEffect(() => {
-    dispatch(getSaleByWeeklyByUser(idUser));
-  }, [dispatch, idUser]);
 
   return (
     <div className="w-full p-4">

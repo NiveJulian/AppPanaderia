@@ -22,7 +22,7 @@ const SheetsSales = ({ data, onViewSale, toggleDelete, changeState }) => {
           - *Producto*: ${producto.product.nombre}
           - *Precio Unitario*: $${producto.product.precio} 
           - *Subtotal*: $${producto.total}
-          - *Cantidad*: ${venta.quantity}\n
+          - *Cantidad*: ${producto.quantity}\n
           `
       )
       .join("\n");

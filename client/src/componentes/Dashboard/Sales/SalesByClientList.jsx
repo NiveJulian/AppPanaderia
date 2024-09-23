@@ -25,7 +25,7 @@ const SalesByClientList = ({ saleInfo, salesWeekly }) => {
       };
 
       const response = await fetch(
-        "http://localhost:3001/api/ticket/generate-ticket",
+        "https://server-espigadeoro.vercel.app/api/ticket/generate-ticket",
         {
           method: "POST",
           headers: {

@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useDispatch } from "react-redux";
-import {
-  getSaleByClientID
-} from "../../../redux/actions/salesActions";
+import { getSaleByClientID } from "../../../redux/actions/salesActions";
 import Loader from "../../Loader/Loader";
 
 const SalesByClientList = ({ saleInfo, salesWeekly }) => {
@@ -18,29 +16,32 @@ const SalesByClientList = ({ saleInfo, salesWeekly }) => {
         unitPrice: producto.precio,
         subtotal: producto.precio * saleInfo.quantities[index],
       }));
-  
+
       const saleData = {
         clientName: saleInfo.client.nombre,
         contactNumber: saleInfo.client.celular,
         products: productos,
         total: saleInfo.totalPrice,
       };
-  
-      const response = await fetch("http://localhost:3001/api/ticket/generate-ticket", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(saleData),
-      });
-  
+
+      const response = await fetch(
+        "http://localhost:3001/api/ticket/generate-ticket",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(saleData),
+        }
+      );
+
       if (response.ok) {
         // Descargar el ticket PDF
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = "ticket.pdf";
+        a.download = `ticket-${saleData.clientName}.pdf`;
         document.body.appendChild(a);
         a.click();
         a.remove();
@@ -51,7 +52,6 @@ const SalesByClientList = ({ saleInfo, salesWeekly }) => {
       console.log("Error en el envío de datos al backend:", error);
     }
   };
-  
 
   async function handleTicketByWP(id) {
     setLoading(true);
@@ -72,7 +72,6 @@ const SalesByClientList = ({ saleInfo, salesWeekly }) => {
       setGeneratingTicket(false);
     }
   }, [saleInfo, generatingTicket]);
-  
 
   return (
     <div className="w-full p-4">
@@ -97,14 +96,12 @@ const SalesByClientList = ({ saleInfo, salesWeekly }) => {
                 <span className="p-2 text-center w-full font-semibold text-xl">
                   ${sale.totalSales}
                 </span>
-                {sale.celular && sale.celular.trim() !== "" && (
-                  <button
-                    onClick={() => handleTicketByWP(sale.id)}
-                    className="text-white mt-4 border border-transparent bg-gray-600 p-2 rounded-md hover:bg-gray-700 transition-colors"
-                  >
-                    Crear ticket
-                  </button>
-                )}
+                <button
+                  onClick={() => handleTicketByWP(sale.id)}
+                  className="text-white mt-4 border border-transparent bg-gray-600 p-2 rounded-md hover:bg-gray-700 transition-colors"
+                >
+                  Crear ticket
+                </button>
               </div>
             );
           })}

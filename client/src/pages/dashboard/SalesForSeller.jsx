@@ -74,7 +74,6 @@ const SalesForSeller = () => {
       sale?.pago?.toLowerCase().includes(lowercasedFilter)
     );
   });
-
   return (
     <Layout isAuth={isAuth}>
       {openModal && (
@@ -142,7 +141,10 @@ const SalesForSeller = () => {
           </div>
           <div className="lg:h-screen overflow-y-auto border border-gray-300 p-2 rounded-md">
             <div className="mt-2">
-              <SalesByClientList saleInfo={sale} salesWeekly={salesWeekly} />
+              <SalesByClientList
+                saleInfo={sale}
+                salesWeekly={salesWeekly}
+              />
             </div>
           </div>
         </div>

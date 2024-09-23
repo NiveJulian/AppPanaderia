@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch } from "react-redux";
 import {
-  getSaleByClientID,
-  getSaleByWeekly,
-  getSaleByWeeklyByUser,
+  getSaleByClientID
 } from "../../../redux/actions/salesActions";
 import Loader from "../../Loader/Loader";
 
@@ -12,27 +10,49 @@ const SalesByClientList = ({ saleInfo, salesWeekly }) => {
   const [loading, setLoading] = useState(false);
   const [generatingTicket, setGeneratingTicket] = useState(false);
 
-  // Función para generar el mensaje de WhatsApp
-  const generarMensajeWhatsApp = (venta) => {
-    const productos = venta.products
-      .map(
-        (producto, index) => `- *Producto*: ${producto.nombre}
-          - *Cantidad*: ${venta.quantities[index]} 
-          - *Precio Unitario*: $${producto.precio} 
-          - *Subtotal*: $${producto.precio * venta.quantities[index]}\n`
-      )
-      .join("\n");
-
-    const mensaje = `*Ticket de Venta*\n\nCliente: ${venta.client.nombre}\nNúmero de Contacto: ${venta.client.celular}\n\n${productos}\n\nTotal de la compra: $${venta.totalPrice}`;
-
-    const numeroWhatsapp = venta.client.celular;
-    const enlace = `https://wa.me/${numeroWhatsapp}?text=${encodeURIComponent(
-      mensaje
-    )}`;
-    return enlace;
+  const enviarDatosAlBackend = async (saleInfo) => {
+    try {
+      const productos = saleInfo.products.map((producto, index) => ({
+        name: producto.nombre,
+        quantity: saleInfo.quantities[index],
+        unitPrice: producto.precio,
+        subtotal: producto.precio * saleInfo.quantities[index],
+      }));
+  
+      const saleData = {
+        clientName: saleInfo.client.nombre,
+        contactNumber: saleInfo.client.celular,
+        products: productos,
+        total: saleInfo.totalPrice,
+      };
+  
+      const response = await fetch("http://localhost:3001/api/ticket/generate-ticket", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(saleData),
+      });
+  
+      if (response.ok) {
+        // Descargar el ticket PDF
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "ticket.pdf";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      } else {
+        console.log("Error generando el ticket");
+      }
+    } catch (error) {
+      console.log("Error en el envío de datos al backend:", error);
+    }
   };
+  
 
-  // Función que maneja la generación del ticket
   async function handleTicketByWP(id) {
     setLoading(true);
     try {
@@ -47,12 +67,12 @@ const SalesByClientList = ({ saleInfo, salesWeekly }) => {
 
   useEffect(() => {
     if (generatingTicket && saleInfo) {
-      const enlaceWhatsApp = generarMensajeWhatsApp(saleInfo);
+      enviarDatosAlBackend(saleInfo);
       setLoading(false);
       setGeneratingTicket(false);
-      window.open(enlaceWhatsApp, "_blank");
     }
   }, [saleInfo, generatingTicket]);
+  
 
   return (
     <div className="w-full p-4">
@@ -68,7 +88,7 @@ const SalesByClientList = ({ saleInfo, salesWeekly }) => {
             return (
               <div
                 key={sale.id}
-                className="border border-teal-500 text-black bg-white rounded-lg shadow-lg p-4 flex flex-col justify-between w-full md:w-80 lg:w-96"
+                className="border border-teal-500 text-black bg-white rounded-lg shadow-lg p-4 flex flex-col justify-between w-full"
               >
                 <h1 className="text-center font-bold uppercase bg-teal-300 p-2 rounded-t-lg">
                   {sale.nombre}
@@ -82,7 +102,7 @@ const SalesByClientList = ({ saleInfo, salesWeekly }) => {
                     onClick={() => handleTicketByWP(sale.id)}
                     className="text-white mt-4 border border-transparent bg-gray-600 p-2 rounded-md hover:bg-gray-700 transition-colors"
                   >
-                    Generar ticket
+                    Crear ticket
                   </button>
                 )}
               </div>

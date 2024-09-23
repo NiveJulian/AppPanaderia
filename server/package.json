@@ -25,7 +25,8 @@
     "mercadopago": "^2.0.13",
     "mime-types": "^2.1.35",
     "multiparty": "^4.2.3",
-    "nodemailer": "^6.9.14"
+    "nodemailer": "^6.9.14",
+    "pdfkit": "^0.15.0"
   },
   "devDependencies": {
     "morgan": "^1.10.0",

@@ -19,7 +19,6 @@ export const authenticationUser = (email) => async (dispatch) => {
         type: AUTH_SELLER,
         payload: response.data,
       });
-      toast.success("Usuario creado y guardado");
     }
   } catch (error) {
     console.error("Error al crear usuario:", error);
@@ -84,6 +83,7 @@ export const fetchPaymentDetails = (id) => async () => {
     console.log(error);
   }
 };
+
 //VENTAS
 export const createPayment = (venta) => async () => {
   try {
@@ -102,8 +102,6 @@ export const createPayment = (venta) => async () => {
     toast.error("Error al conectar con el servidor.");
   }
 };
-
-
 
 //LOGIN
 export const loginWithGoogle = (userInfo) => ({

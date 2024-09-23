@@ -441,13 +441,13 @@ async function getSaleByClientId(auth, id) {
 }
 
 async function preloadData(auth) {
-  const { products } = await getSheetData(auth);  // Obtener solo los productos del resultado
-  const clients = await getClients(auth);         // Obtener todos los clientes
+  const { products } = await getSheetData(auth); // Obtener solo los productos del resultado
+  const clients = await getClients(auth); // Obtener todos los clientes
   return { products, clients };
 }
 
 function findClientById(clients, clientId) {
-  return clients.find(client => client.id === clientId) || null;
+  return clients.find((client) => client.id === clientId) || null;
 }
 
 function findProductById(products, productId) {
@@ -455,7 +455,7 @@ function findProductById(products, productId) {
     console.error("Error: products no es un array");
     return null;
   }
-  return products.find(product => product.id === productId) || null;
+  return products.find((product) => product.id === productId) || null;
 }
 
 async function getSaleByUserId(auth, uid) {
@@ -494,23 +494,35 @@ async function getSaleByUserId(auth, uid) {
         const estadoPago = row[6];
         const fecha = row[8];
         const hora = row[9];
-        const product = findProductById(products, Number(productId)); // Buscar producto en la pre-carga
+        const product = findProductById(products, productId); // Buscar producto en la pre-carga
 
         if (salesSummary[saleId]) {
+          salesSummary[saleId].products.push({
+            productId,
+            product,
+            quantity,
+            total,
+          });
           salesSummary[saleId].total += total;
           salesSummary[saleId].quantity += quantity;
         } else {
           salesSummary[saleId] = {
             id: saleId,
-            productId,
             client,
-            quantity,
-            total,
             paymentMethod,
             estadoPago,
             fecha,
             hora,
-            product,
+            products: [
+              {
+                productId,
+                product,
+                quantity,
+                total,
+              },
+            ],
+            total,
+            quantity,
           };
         }
       } catch (error) {
@@ -527,7 +539,6 @@ async function getSaleByUserId(auth, uid) {
     throw new Error("Error obteniendo ventas por UID");
   }
 }
-
 
 async function getWeeklySalesByUser(auth, uid) {
   try {
@@ -616,6 +627,7 @@ async function getWeeklySalesByUser(auth, uid) {
     throw new Error("Error retrieving weekly sales data");
   }
 }
+
 
 async function increaseStock(auth, productId, amount) {
   const sheets = google.sheets({ version: "v4", auth });

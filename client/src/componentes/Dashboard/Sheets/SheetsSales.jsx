@@ -4,21 +4,37 @@ import { useEffect, useState } from "react";
 import InfiniteScroll from "../InfiniteScroll/InfiniteScroll";
 
 const SheetsSales = ({ data, onViewSale, toggleDelete, changeState }) => {
-  const [visibleProducts, setVisibleProducts] = useState(9); // Mostrar 8 productos inicialmente
-
-  // Control de los productos actuales visibles basados en el estado visibleProducts
+  const [visibleProducts, setVisibleProducts] = useState(9);
   const currentProducts = data.slice(0, visibleProducts);
 
   useEffect(() => {
-    setVisibleProducts(9); // Reiniciar a 9 productos visibles cuando cambien los productos
+    setVisibleProducts(9);
   }, [data]);
 
   const handleLoadMore = () => {
-    setVisibleProducts((prevVisible) => prevVisible + 9); // Incrementa los productos visibles en 9 cada vez que se presiona el botón
+    setVisibleProducts((prevVisible) => prevVisible + 9);
   };
 
-  const handleSendMessage = (phoneNumber) => {
-    window.open(`https://wa.me/${phoneNumber}`, "_blank");
+  const handleSendMessage = (venta) => {
+    const productos = venta.products
+      .map(
+        (producto) => `
+          - *Producto*: ${producto.product.nombre}
+          - *Precio Unitario*: $${producto.product.precio} 
+          - *Subtotal*: $${producto.total}
+          - *Cantidad*: ${venta.quantity}\n
+          `
+      )
+      .join("\n");
+
+    const mensaje = `*Ticket de Venta*\n\nCliente: ${venta.client.nombre}\nNúmero de Contacto: ${venta.client.celular}\n\n${productos}\n\nTotal de la compra: $${venta.total}`;
+
+    const numeroWhatsapp = venta.client.celular;
+    const enlace = `https://wa.me/${numeroWhatsapp}?text=${encodeURIComponent(
+      mensaje
+    )}`;
+
+    window.open(enlace, "_blank");
   };
 
   return (
@@ -94,7 +110,7 @@ const SheetsSales = ({ data, onViewSale, toggleDelete, changeState }) => {
               <div className="flex justify-center items-center flex-col gap-2 mt-4 w-full rounded-md p-1">
                 <div className="flex flex-row">
                   <button
-                    onClick={() => handleSendMessage(prod.celular)}
+                    onClick={() => handleSendMessage(prod)}
                     className={`hover:text-green-500 hover:border-green-500 border border-gray-200 rounded-full p-2 mr-2 ${
                       prod.celular !== "" ? "block" : "hidden"
                     }`}

@@ -221,93 +221,47 @@ async function getWeeklySalesByClient(auth) {
       return new Date(`${year}-${month}-${day}`);
     }
 
-    // Ordenar las ventas por fecha
-    salesRows.sort((a, b) => parseDate(a[8]) - parseDate(b[8]));
+    // Obtener la fecha actual
+    const today = new Date();
+    const currentDayOfWeek = today.getDay(); // 0 = domingo, 1 = lunes, ..., 6 = sábado
+    const diffToMonday = (currentDayOfWeek + 6) % 7; // Obtener cuántos días retroceder para llegar al lunes
+    const currentStartDate = new Date(today);
+    currentStartDate.setDate(today.getDate() - diffToMonday);
+    currentStartDate.setHours(0, 0, 0, 0); // Establecer a la medianoche para mayor precisión
 
-    // Crear una lista para almacenar los resultados
-    const weeklySalesData = [];
-
-    let currentStartDate = parseDate(salesRows[0][8]); // La primera fecha de venta
-    currentStartDate.setHours(0, 0, 0, 0); // Ajustar a medianoche para precisión
-    let currentEndDate = new Date(currentStartDate);
-    currentEndDate.setDate(currentEndDate.getDate() + 6); // Intervalo de 7 días
+    const currentEndDate = new Date(currentStartDate);
+    currentEndDate.setDate(currentStartDate.getDate() + 6); // Intervalo de lunes a domingo
 
     // Crear un objeto para almacenar el total de ventas por cliente y por semana
     const weeklySalesByClient = {};
 
-    // Iterar sobre las ventas para agrupar y sumar los totales en intervalos de 7 días
+    // Iterar sobre las ventas para agrupar y sumar los totales en la semana actual
     for (const row of salesRows) {
       const saleDate = parseDate(row[8]); // Fecha de la venta
       const totalSale = parseFloat(row[7]); // Total de la venta
       const clientId = row[2];
 
-      // Verificar si la fecha de la venta está dentro del intervalo actual
+      // Verificar si la fecha de la venta está dentro de la semana en curso
       if (saleDate >= currentStartDate && saleDate <= currentEndDate) {
         if (!weeklySalesByClient[clientId]) {
-          weeklySalesByClient[clientId] = {};
+          weeklySalesByClient[clientId] = 0;
         }
-        const weekKey = `${currentStartDate.toISOString()}-${currentEndDate.toISOString()}`;
-
-        if (!weeklySalesByClient[clientId][weekKey]) {
-          weeklySalesByClient[clientId][weekKey] = 0;
-        }
-
-        weeklySalesByClient[clientId][weekKey] += totalSale;
-      } else {
-        // Guardar los datos del intervalo actual en el array
-        for (const clientId in weeklySalesByClient) {
-          for (const weekKey in weeklySalesByClient[clientId]) {
-            const clientData = await getClientById(auth, clientId); // Obtener datos del cliente
-
-            weeklySalesData.push({
-              ...clientData, // Añadir los datos del cliente
-              weekStart: weekKey.split("-")[0],
-              weekEnd: weekKey.split("-")[1],
-              totalSales: weeklySalesByClient[clientId][weekKey],
-            });
-          }
-        }
-
-        // Reiniciar el intervalo
-        currentStartDate = parseDate(row[8]);
-        currentStartDate.setHours(0, 0, 0, 0);
-        currentEndDate = new Date(currentStartDate);
-        currentEndDate.setDate(currentEndDate.getDate() + 6);
-
-        // Acumular el total de ventas para el nuevo intervalo
-        if (!weeklySalesByClient[clientId]) {
-          weeklySalesByClient[clientId] = {};
-        }
-
-        const weekKey = `${currentStartDate.toISOString()}-${currentEndDate.toISOString()}`;
-
-        if (!weeklySalesByClient[clientId][weekKey]) {
-          weeklySalesByClient[clientId][weekKey] = 0;
-        }
-
-        weeklySalesByClient[clientId][weekKey] += totalSale;
+        weeklySalesByClient[clientId] += totalSale;
       }
     }
 
-    // Guardar los datos del último intervalo en el array
+    // Crear una lista para almacenar los resultados
+    const weeklySalesData = [];
+
+    // Guardar los totales de la semana actual
     for (const clientId in weeklySalesByClient) {
-      for (const weekKey in weeklySalesByClient[clientId]) {
-        const clientData = await getClientById(auth, clientId); // Obtener datos del cliente
-
-        // Extraer la parte inicial y final del weekKey
-        const [startDate, endDate] = weekKey.split("Z-");
-
-        // Obtener solo el día de inicio y final
-        const weekStart = startDate.split("-")[2].split("T")[0]; // Día de weekStart
-        const weekEnd = endDate.split("-")[2].split("T")[0]; // Día de weekEnd
-
-        weeklySalesData.push({
-          ...clientData, // Añadir los datos del cliente
-          weekStart, // Día de la fecha inicial
-          weekEnd, // Día de la fecha final
-          totalSales: weeklySalesByClient[clientId][weekKey],
-        });
-      }
+      const clientData = await getClientById(auth, clientId); // Obtener datos del cliente
+      weeklySalesData.push({
+        ...clientData, // Añadir los datos del cliente
+        weekStart: currentStartDate.toISOString().split("T")[0], // Inicio de la semana
+        weekEnd: currentEndDate.toISOString().split("T")[0], // Fin de la semana
+        totalSales: weeklySalesByClient[clientId],
+      });
     }
 
     return weeklySalesData;
@@ -316,6 +270,7 @@ async function getWeeklySalesByClient(auth) {
     throw new Error("Error retrieving weekly sales data");
   }
 }
+
 
 async function putSaleChangeState(auth, id, state) {
   const sheets = google.sheets({ version: "v4", auth });
@@ -564,14 +519,16 @@ async function getWeeklySalesByUser(auth, uid) {
       return new Date(`${year}-${month}-${day}`);
     }
 
-    // Función para obtener el inicio de la semana (Lunes)
-    function getStartOfWeek(date) {
-      const day = date.getDay();
-      const diff = date.getDate() - day + (day === 0 ? -6 : 1); // Ajustar para que el Lunes sea el primer día
-      const monday = new Date(date.setDate(diff));
-      monday.setHours(0, 0, 0, 0); // Asegurar que es a medianoche
-      return monday;
-    }
+    // Obtener la fecha actual
+    const today = new Date();
+    const currentDayOfWeek = today.getDay(); // 0 = domingo, 1 = lunes, ..., 6 = sábado
+    const diffToMonday = (currentDayOfWeek + 6) % 7; // Obtener cuántos días retroceder para llegar al lunes
+    const currentStartDate = new Date(today);
+    currentStartDate.setDate(today.getDate() - diffToMonday);
+    currentStartDate.setHours(0, 0, 0, 0); // Establecer a la medianoche
+
+    const currentEndDate = new Date(currentStartDate);
+    currentEndDate.setDate(currentStartDate.getDate() + 6); // Intervalo de lunes a domingo
 
     // Agrupar las ventas por cliente y semana
     const weeklySalesByClient = {};
@@ -581,23 +538,14 @@ async function getWeeklySalesByUser(auth, uid) {
       const totalSale = parseFloat(row[7]);
       const clientId = row[2];
 
-      // Obtener el lunes de la semana de la venta
-      const startOfWeek = getStartOfWeek(new Date(saleDate));
-      const endOfWeek = new Date(startOfWeek);
-      endOfWeek.setDate(endOfWeek.getDate() + 6); // Obtener el domingo
-
-      const weekKey = `${startOfWeek.toISOString()}-${endOfWeek.toISOString()}`;
-
-      if (!weeklySalesByClient[clientId]) {
-        weeklySalesByClient[clientId] = {};
+      // Verificar si la venta está dentro de la semana actual
+      if (saleDate >= currentStartDate && saleDate <= currentEndDate) {
+        if (!weeklySalesByClient[clientId]) {
+          weeklySalesByClient[clientId] = 0;
+        }
+        // Sumar la venta al total de la semana para el cliente
+        weeklySalesByClient[clientId] += totalSale;
       }
-
-      if (!weeklySalesByClient[clientId][weekKey]) {
-        weeklySalesByClient[clientId][weekKey] = 0;
-      }
-
-      // Sumar la venta al total de la semana para el cliente
-      weeklySalesByClient[clientId][weekKey] += totalSale;
     }
 
     // Crear la lista de resultados con los datos del cliente y las ventas por semana
@@ -606,19 +554,12 @@ async function getWeeklySalesByUser(auth, uid) {
     for (const clientId in weeklySalesByClient) {
       const clientData = await getClientById(auth, clientId); // Obtener los datos del cliente una vez por cliente
 
-      for (const weekKey in weeklySalesByClient[clientId]) {
-        const [startDate, endDate] = weekKey.split("Z-");
-
-        const weekStart = startDate.split("T")[0]; // Solo la fecha sin hora
-        const weekEnd = endDate.split("T")[0];
-
-        weeklySalesData.push({
-          ...clientData, // Añadir los datos del cliente
-          weekStart,
-          weekEnd,
-          totalSales: weeklySalesByClient[clientId][weekKey],
-        });
-      }
+      weeklySalesData.push({
+        ...clientData, // Añadir los datos del cliente
+        weekStart: currentStartDate.toISOString().split("T")[0], // Inicio de la semana
+        weekEnd: currentEndDate.toISOString().split("T")[0], // Fin de la semana
+        totalSales: weeklySalesByClient[clientId],
+      });
     }
 
     return weeklySalesData;

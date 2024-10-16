@@ -1,6 +1,7 @@
 require("dotenv").config();
 const { google } = require("googleapis");
 const { getUser } = require("../user/userController");
+const moment = require("moment");
 const { getSheetData, getSheetDataById } = require("./productController");
 const { getClients, getClientById } = require("./clientController");
 
@@ -199,6 +200,64 @@ async function getSaleData(auth) {
     throw new Error("Error retrieving sales data");
   }
 }
+
+// Obtener las ventas semanales de un cliente específico
+async function getWeeklyAllSalesByClient(auth, clientId) {
+  try {
+    const sheets = google.sheets({ version: "v4", auth });
+
+    // Obtener los datos de ventas desde la hoja de "Ventas"
+    const salesRes = await sheets.spreadsheets.values.get({
+      spreadsheetId: process.env.GOOGLE_SHEETS_ID,
+      range: "Ventas!A2:K", // Ajusta el rango según tus necesidades
+    });
+    const salesRows = salesRes.data.values || [];
+
+    if (salesRows.length === 0) {
+      return []; // No hay ventas
+    }
+
+    // Filtrar las ventas para el cliente específico
+    const salesForClient = salesRows.filter((row) => row[2] === clientId);
+
+    // Agrupar las ventas por semanas
+    const weeklySales = salesForClient.reduce((acc, row) => {
+      const saleDate = moment(row[8], "DD/MM/YYYY");
+      const totalSale = parseFloat(row[7]);
+
+      const week = saleDate.isoWeek(); // Obtener el número de semana del año
+
+      if (!acc[week]) {
+        acc[week] = {
+          weekStart: saleDate.startOf('isoWeek').format('YYYY-MM-DD'),
+          weekEnd: saleDate.endOf('isoWeek').format('YYYY-MM-DD'),
+          totalSales: 0,
+          sales: []
+        };
+      }
+      
+      acc[week].totalSales += totalSale;
+      acc[week].sales.push({
+        saleDate: saleDate.format('YYYY-MM-DD'),
+        amount: totalSale,
+      });
+
+      return acc;
+    }, {});
+
+    // Transformar el objeto en un array para la respuesta
+    const weeklySalesArray = Object.keys(weeklySales).map((week) => ({
+      week: week,
+      ...weeklySales[week],
+    }));
+
+    return weeklySalesArray;
+  } catch (error) {
+    console.error({ error: error.message });
+    throw new Error("Error retrieving weekly sales data");
+  }
+}
+
 
 async function getWeeklySalesByClient(auth) {
   try {
@@ -977,4 +1036,5 @@ module.exports = {
   getSaleByUserId,
   getSaleByClientId,
   putSaleChangeState,
+  getWeeklyAllSalesByClient
 };

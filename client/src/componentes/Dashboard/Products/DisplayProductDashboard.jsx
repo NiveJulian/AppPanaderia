@@ -170,6 +170,10 @@ const DisplayProductDashboard = ({ products, client, user }) => {
                   <div className="font-light text-gray-500"></div>
                   <button onClick={() => toggleModal()} className="font-semibold border p-2 border-gray-400 rounded-md bg-gray-400 text-white shadow-md active:translate-y-[1px]">Editar cliente</button>
                 </div>
+                <div className="text-sm text-center mr-4">
+                  <div className="font-light text-gray-500"></div>
+                  <Link to={`/dashboard/products/${id}/sales`} className="font-semibold border p-2 border-gray-400 rounded-md bg-gray-400 text-white shadow-md active:translate-y-[1px]">Ver historial</Link>
+                </div>
               </div>
             </div>
             <div className="mt-5 px-5">

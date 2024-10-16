@@ -6,7 +6,7 @@ const {
   updateClient,
   getClientByUserID,
 } = require("../Controllers/sheets/clientController");
-const { authorize } = require("../Controllers/sheets/sheetsController");
+const { authorize, getWeeklyAllSalesByClient } = require("../Controllers/sheets/sheetsController");
 const clientRoutes = Router();
 
 clientRoutes.post("/", async (req, res) => {
@@ -99,4 +99,25 @@ clientRoutes.put("/update/:id", async (req, res) => {
     res.status(404).json({ error: error.message });
   }
 });
+
+clientRoutes.get("/:id/ventas-por-semana", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const auth = await authorize();
+
+    // Obtener ventas semanales por cliente
+    const weeklySales = await getWeeklyAllSalesByClient(auth, id);
+
+    if (weeklySales.length === 0) {
+      return res.status(404).json({ message: "No se encontraron ventas para este cliente" });
+    }
+
+    res.status(200).json(weeklySales);
+  } catch (error) {
+    console.log({ error: error.message });
+    res.status(500).send("Error al obtener las ventas semanales");
+  }
+});
+
+
 module.exports = clientRoutes;

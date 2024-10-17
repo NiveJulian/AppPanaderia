@@ -19,7 +19,7 @@ export default function SalesWeeklyByClient() {
         <Layout isAuth={isAuth}>
             <div className="h-screen">
 
-            <h1 className="text-5xl text-black">Pelado chupa pingo</h1>
+            <h1 className="text-5xl text-black">Historial</h1>
             <div className="mt-8">
                 <SalesWeeklyByClientId data={data} />
             </div>

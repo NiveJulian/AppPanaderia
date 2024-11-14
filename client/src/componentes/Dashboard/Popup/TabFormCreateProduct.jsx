@@ -4,6 +4,7 @@ import validationProductForm from "./validationClienteForm";
 import toast from "react-hot-toast";
 import {
   addSheetRow,
+  createProductByClientId,
   updateRow,
 } from "../../../redux/actions/productActions";
 
@@ -53,7 +54,7 @@ export default function TabFormCreateProduct({ isOpen, onClose, product }) {
           precio: formData.precio,
         };
 
-        if (product) {
+        if (product.clientId === " ") {
           const updatedRows = {
             id: formData.id,
             nombre: formData.nombre,
@@ -62,6 +63,8 @@ export default function TabFormCreateProduct({ isOpen, onClose, product }) {
           };
 
           dispatch(updateRow(updatedRows));
+        } else if (product.clientId !== " ") {
+          dispatch(createProductByClientId(product.clientId, newRow));
         } else {
           dispatch(addSheetRow(newRow));
         }

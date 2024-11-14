@@ -87,7 +87,7 @@ async function getClientById(auth, id) {
     // Buscar el cliente con el ID proporcionado
     const clientRow = rows.find((row) => row[0] === id);
     if (!clientRow) {
-      return null; // Si no se encuentra el cliente
+      throw new Error("Cliente no encontrado"); // Si no se encuentra el cliente
     }
 
     // Formatear los datos del cliente
@@ -137,7 +137,6 @@ async function getClientByUserID(auth, uid) {
   }
 }
 
-
 async function getClientByName(auth, clientName) {
   try {
     const sheets = google.sheets({ version: "v4", auth });
@@ -183,7 +182,7 @@ async function updateClient(auth, id, updatedData) {
     });
 
     const rows = res.data.values || [];
-    
+
     // Buscar el índice de la fila donde está el cliente
     const rowIndex = rows.findIndex((row) => row[0] === id);
 

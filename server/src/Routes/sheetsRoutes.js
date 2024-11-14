@@ -22,7 +22,21 @@ const {
   appendRow,
   updateRow,
   deleteRowById,
+  createProductoByClientId,
+  getProductByClientID,
 } = require("../Controllers/sheets/productController.js");
+
+sheetsRouter.get("/data/client/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const auth = await authorize();
+    const data = await getProductByClientID(auth, id);
+    res.json(data);
+  } catch (error) {
+    console.log({ error: error.message });
+    res.status(500).send(error.message);
+  }
+});
 
 sheetsRouter.get("/data", async (req, res) => {
   try {
@@ -94,6 +108,19 @@ sheetsRouter.put("/product/:id", async (req, res) => {
   }
 });
 
+sheetsRouter.post("/product-client/:clientId", async (req, res) => {
+  try {
+    const auth = await authorize();
+    const body = req.body;
+    const clientId = req.params.clientId;
+    const result = await createProductoByClientId(auth, body, clientId);
+    res.status(200).json(result);
+  } catch (error) {
+    console.log({ error: error.message });
+    res.status(500).json({ error: error.message });
+  }
+});
+
 sheetsRouter.get("/sale", async (req, res) => {
   try {
     const auth = await authorize();
@@ -120,8 +147,6 @@ sheetsRouter.get("/sales/weekly", async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
-
-
 
 sheetsRouter.get("/sale/:id", async (req, res) => {
   try {

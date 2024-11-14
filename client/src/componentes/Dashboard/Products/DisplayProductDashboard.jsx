@@ -12,16 +12,23 @@ import {
 } from "../../../redux/actions/cartActions";
 import Loader from "../../Loader/Loader";
 import TabCreateClient from "../Popup/TabCreateClient";
+import TabFormCreateProduct from "../Popup/TabFormCreateProduct";
+import { createProductByClientId } from "../../../redux/actions/productActions";
 
 const DisplayProductDashboard = ({ products, client, user }) => {
   const cartItems = useSelector((state) => state.cart.cartItems);
   const [searchTerm, setSearchTerm] = useState("");
+  const [data, setData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [activeForm, setActiveForm] = useState(false);
-
+  const [activeModalProduct, setActiveModalProduct] = useState(false);
 
   const toggleModal = () => {
     setActiveForm(!activeForm);
+  };
+
+  const toggleModalProduct = () => {
+    setActiveModalProduct(!activeModalProduct);
   };
 
   const { id } = useParams();
@@ -105,6 +112,27 @@ const DisplayProductDashboard = ({ products, client, user }) => {
     }
   };
 
+  const handdleEditButton = (product) => {
+    if (product.clientId) {
+      const data = {
+        id: product.id,
+        nombre: product.nombre,
+        cantidad: product.cantidad,
+        precio: product.precio,
+      };
+      setData(data);
+    }
+
+    const data = {
+      id: product.id,
+      clientId: id,
+      nombre: product.nombre,
+      cantidad: product.cantidad,
+      precio: product.precio,
+    };
+    setData(data);
+  };
+
   const handleQuantityChange = (index, action) => {
     const item = cartItems[index];
     const product = products.find((p) => p.id === item.id);
@@ -144,7 +172,18 @@ const DisplayProductDashboard = ({ products, client, user }) => {
   return (
     <div className="container mx-auto bg-white border border-gray-300 shadow-lg">
       {activeForm && (
-        <TabCreateClient isOpen={activeForm} onClose={toggleModal} cliente={client} />
+        <TabCreateClient
+          isOpen={activeForm}
+          onClose={toggleModal}
+          cliente={client}
+        />
+      )}
+      {activeModalProduct && (
+        <TabFormCreateProduct
+          isOpen={activeModalProduct}
+          onClose={toggleModalProduct}
+          product={data}
+        />
       )}
       {loading ? (
         <div className="flex justify-center flex-col gap-2 items-center h-screen">
@@ -168,11 +207,21 @@ const DisplayProductDashboard = ({ products, client, user }) => {
               <div className="flex items-center">
                 <div className="text-sm text-center mr-4">
                   <div className="font-light text-gray-500"></div>
-                  <button onClick={() => toggleModal()} className="font-semibold border p-2 border-gray-400 rounded-md bg-gray-400 text-white shadow-md active:translate-y-[1px]">Editar cliente</button>
+                  <button
+                    onClick={() => toggleModal()}
+                    className="font-semibold border p-2 border-gray-400 rounded-md bg-gray-400 text-white shadow-md active:translate-y-[1px]"
+                  >
+                    Editar cliente
+                  </button>
                 </div>
                 <div className="text-sm text-center mr-4">
                   <div className="font-light text-gray-500"></div>
-                  <Link to={`/dashboard/products/${id}/sales`} className="font-semibold border p-2 border-gray-400 rounded-md bg-gray-400 text-white shadow-md active:translate-y-[1px]">Ver historial</Link>
+                  <Link
+                    to={`/dashboard/products/${id}/sales`}
+                    className="font-semibold border p-2 border-gray-400 rounded-md bg-gray-400 text-white shadow-md active:translate-y-[1px]"
+                  >
+                    Ver historial
+                  </Link>
                 </div>
               </div>
             </div>
@@ -189,18 +238,33 @@ const DisplayProductDashboard = ({ products, client, user }) => {
               {filteredProducts &&
                 filteredProducts.map((product, i) => {
                   return (
-                    <button
-                      key={i}
-                      onClick={() => handleAddToCart(product)}
-                      className="flex h-32 border cursor-pointer shadow-md rounded-md p-2 flex-col items-center justify-center w-full mx-auto hover:shadow-xl active:shadow-lg active:translate-y-[2px]"
-                    >
-                      <h4 className="mt-2 text-sm font-medium text-primary">
-                        {product.nombre}
-                      </h4>
-                      <p className="text-tertiary mt-2 text-sm">
-                        ${product.precio}
-                      </p>
-                    </button>
+                    <div key={i} className="w-full border border-gray-100">
+                      <div className="flex flex-row">
+                        <button
+                          onClick={() => {
+                            toggleModalProduct();
+                            handdleEditButton(product);
+                          }}
+                          className="w-full text-white bg-gray-700 border border-gray-100 p-2 shadow-md rounded-md hover:shadow-xl"
+                        >
+                          Editar
+                        </button>
+                        <button className="w-full text-white bg-gray-400 border border-gray-100 p-2 shadow-md rounded-md hover:shadow-xl">
+                          Borrar
+                        </button>
+                      </div>
+                      <button
+                        onClick={() => handleAddToCart(product)}
+                        className="flex h-32 cursor-pointer shadow-md rounded-md p-2 flex-col items-center justify-center w-full mx-auto hover:shadow-xl active:shadow-lg active:translate-y-[2px]"
+                      >
+                        <h4 className="mt-2 text-sm font-medium text-primary">
+                          {product.nombre}
+                        </h4>
+                        <p className="text-tertiary mt-2 text-sm">
+                          ${product.precio}
+                        </p>
+                      </button>
+                    </div>
                   );
                 })}
             </div>

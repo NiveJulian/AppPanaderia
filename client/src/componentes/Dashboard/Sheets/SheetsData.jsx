@@ -14,6 +14,7 @@ const SheetsData = ({
               <th>Nombre</th>
               <th>Stock</th>
               <th>Precio</th>
+              <th>Cliente</th>
               <th>Acciones</th>
             </tr>
           </thead>
@@ -35,6 +36,7 @@ const SheetsData = ({
                     <td>{row.nombre}</td>
                     <td>{row.stock}</td>
                     <td>{row.precio}</td>
+                    <td>{row?.client ? row.client : ""}</td>
                     <td className="gap-2">
                       <button
                         title="Editar"

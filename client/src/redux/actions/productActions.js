@@ -19,12 +19,13 @@ export const CLEAR_COLOR = "CLEAR_COLOR";
 export const GET_COLORS = "GET_COLORS";
 export const FILTER_COLOR = "FILTER_COLOR";
 export const SET_VARIABLE = "SET_VARIABLE";
-export const SEARCH_PRODUCT= "SEARCH_PRODUCT";
-export const CLEAN_SEARCH_PRODUCT= "CLEAN_SEARCH_PRODUCT"
+export const SEARCH_PRODUCT = "SEARCH_PRODUCT";
+export const CLEAN_SEARCH_PRODUCT = "CLEAN_SEARCH_PRODUCT";
 
 export const GET_CASH_FLOW = "GET_CASH_FLOW";
 export const ADD_CASH_FLOW_ENTRY = "ADD_CASH_FLOW_ENTRY";
 
+export const CREATE_PRODUCT_BY_CLIENT_ID = "CREATE_PRODUCT_BY_CLIENT_ID";
 
 export const fetchSheets = () => async (dispatch) => {
   const token = localStorage.getItem("authToken");
@@ -38,6 +39,25 @@ export const fetchSheets = () => async (dispatch) => {
       type: FETCH_SHEETS,
       payload: res.data.products,
     });
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+export const fetchSheetsByClient = (id) => async (dispatch) => {
+  const token = localStorage.getItem("authToken");
+  try {
+    const res = await instance.get(`/api/sheets/data/client/${id}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    if (res.status === 200) {
+      dispatch({
+        type: FETCH_SHEETS,
+        payload: res.data.products,
+      });
+    }
   } catch (error) {
     console.log(error);
   }
@@ -70,11 +90,10 @@ export const addSheetRow = (rowData) => async (dispatch) => {
         type: ADD_SHEET_ROW,
         payload: res.data,
       });
-      dispatch(fetchSheets());
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
     }
-    setTimeout(() => {
-      toast.dismiss();
-    }, 2000);
   } catch (error) {
     console.log(error);
   }
@@ -89,7 +108,9 @@ export const updateRow = (rowData) => async (dispatch) => {
         type: UPDATE_SHEET_ROW,
         payload: res.data,
       });
-      dispatch(fetchSheets());
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
     }
   } catch (error) {
     console.log(error);
@@ -134,98 +155,108 @@ export const publicProductById = (id) => async (dispatch) => {
   }
 };
 
-  
-  export const renderCondition = (condition) => ({
-    type: SET_CONDITION,
-    payload: condition,
-  });
-  
-  export const filterByCategory = (category) => async (dispatch) => {
-    const token = localStorage.getItem("authToken");
-    try {
-      const res = await instance.get(`/api/sheets/filter/${category}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-  
+export const renderCondition = (condition) => ({
+  type: SET_CONDITION,
+  payload: condition,
+});
+
+export const filterByCategory = (category) => async (dispatch) => {
+  const token = localStorage.getItem("authToken");
+  try {
+    const res = await instance.get(`/api/sheets/filter/${category}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    dispatch({
+      type: FILTER_CATEGORY,
+      payload: res.data.products,
+    });
+  } catch (error) {
+    console.error("Error fetching sheets by category:", error);
+  }
+};
+
+export const clearFilteredProducts = () => ({
+  type: CLEAR_FILTER,
+});
+
+export const createProductByClientId = (id, data) => async (dispatch) => {
+  try {
+    const res = await instance.post(`/api/sheets/product-client/${id}`, data);
+    console.log(res);
+    if (res.status === 200) {
+      toast.success("Producto creado exitosamente");
       dispatch({
-        type: FILTER_CATEGORY,
-        payload: res.data.products,
+        type: CREATE_PRODUCT_BY_CLIENT_ID,
+        payload: res.data,
       });
-    } catch (error) {
-      console.error("Error fetching sheets by category:", error);
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
     }
-  };
-  
-  export const clearFilteredProducts = () => ({
-    type: CLEAR_FILTER,
-  });
-
-
-  
-  
-
-  export const setVariable = (variable) => async (dispatch) => {
-    try {
-      dispatch({ type: SET_VARIABLE, payload: variable });
-    } catch (error) {
-      console.error("Error setting variable:", error);
-    }
-  };
-
-  export const searchProduct = (name) => async (dispatch) =>{
-    try {
-      
-      dispatch({ type: SEARCH_PRODUCT, payload: name });
-      
-      
-    }
-    catch (error) {
-      console.error("Error searching product:", error);
-      toast.error("Error buscando el producto");
-    }
+  } catch (error) {
+    console.log(error);
   }
+};
 
-  export const cleanSearchProducts = () => async (dispatch) => {
-    try {
-      dispatch({ type: CLEAN_SEARCH_PRODUCT });
-    } catch (error) {
-      console.error("Error cleaning search products:", error);
-    }
+export const setVariable = (variable) => async (dispatch) => {
+  try {
+    dispatch({ type: SET_VARIABLE, payload: variable });
+  } catch (error) {
+    console.error("Error setting variable:", error);
   }
+};
 
-  // FLUJO DE CAJA
+export const searchProduct = (name) => async (dispatch) => {
+  try {
+    dispatch({ type: SEARCH_PRODUCT, payload: name });
+  } catch (error) {
+    console.error("Error searching product:", error);
+    toast.error("Error buscando el producto");
+  }
+};
+
+export const cleanSearchProducts = () => async (dispatch) => {
+  try {
+    dispatch({ type: CLEAN_SEARCH_PRODUCT });
+  } catch (error) {
+    console.error("Error cleaning search products:", error);
+  }
+};
+
+// FLUJO DE CAJA
 // Obtener todos los movimientos de caja
 export const getCashFlow = () => async (dispatch) => {
-    try {
-      const res = await instance.get(`/api/sheets/cashflow`);
-  
-      dispatch({
-        type: GET_CASH_FLOW,
-        payload: res.data, // Asegúrate que este payload coincide con la estructura de datos que esperas en tu componente
-      });
-    } catch (error) {
-      console.error("Error obteniendo flujo de caja:", error);
-      dispatch({ error: error.message });
-    }
-  };
-  
-  export const addCashFlowEntry = (entryData) => async (dispatch) => {
-    try {
-      const response = await instance.post("/api/sheets/cashflow/add", entryData);
-      toast.success("Entrada añadida exitosamente");
-  
-      // Actualizar el estado local solo con la nueva entrada
-      dispatch({
-        type: ADD_CASH_FLOW_ENTRY,
-        payload: response.data, // Solo la nueva entrada
-      });
-  
-      // Desencadenar un fetch para obtener todo el flujo de caja actualizado (opcional)
-      dispatch(getCashFlow());
-    } catch (error) {
-      console.error("Error añadiendo entrada:", error);
-      toast.error("Error añadiendo la entrada de flujo de caja");
-    }
-  };
+  try {
+    const res = await instance.get(`/api/sheets/cashflow`);
+
+    dispatch({
+      type: GET_CASH_FLOW,
+      payload: res.data, // Asegúrate que este payload coincide con la estructura de datos que esperas en tu componente
+    });
+  } catch (error) {
+    console.error("Error obteniendo flujo de caja:", error);
+    dispatch({ error: error.message });
+  }
+};
+
+export const addCashFlowEntry = (entryData) => async (dispatch) => {
+  try {
+    const response = await instance.post("/api/sheets/cashflow/add", entryData);
+    toast.success("Entrada añadida exitosamente");
+
+    // Actualizar el estado local solo con la nueva entrada
+    dispatch({
+      type: ADD_CASH_FLOW_ENTRY,
+      payload: response.data, // Solo la nueva entrada
+    });
+
+    // Desencadenar un fetch para obtener todo el flujo de caja actualizado (opcional)
+    dispatch(getCashFlow());
+  } catch (error) {
+    console.error("Error añadiendo entrada:", error);
+    toast.error("Error añadiendo la entrada de flujo de caja");
+  }
+};

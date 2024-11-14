@@ -2,7 +2,10 @@ import React, { useEffect } from "react";
 import { Layout } from "../../componentes/Dashboard/Layout/Layout";
 import { useDispatch, useSelector } from "react-redux";
 import DisplayProductDashboard from "../../componentes/Dashboard/Products/DisplayProductDashboard";
-import { fetchSheets } from "../../redux/actions/productActions";
+import {
+  fetchSheets,
+  fetchSheetsByClient,
+} from "../../redux/actions/productActions";
 import { getClientById } from "../../redux/actions/clientActions";
 import { useParams } from "react-router-dom";
 
@@ -19,12 +22,9 @@ const DashboardClientId = () => {
   // const isEmpty = (obj) => Object.keys(obj).length === 0;
 
   useEffect(() => {
+    dispatch(fetchSheetsByClient(id));
     dispatch(getClientById(id));
   }, [dispatch, id]);
-
-  useEffect(() => {
-    dispatch(fetchSheets());
-  }, [dispatch]);
 
   return (
     <Layout isAuth={isAuth}>

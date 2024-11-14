@@ -1,35 +1,103 @@
 const { google } = require("googleapis");
+const { auth } = require("googleapis/build/src/apis/abusiveexperiencereport");
+const { getClientById } = require("./clientController");
 
 async function getSheetData(auth) {
   try {
     const sheets = google.sheets({ version: "v4", auth });
     const res = await sheets.spreadsheets.values.get({
       spreadsheetId: process.env.GOOGLE_SHEETS_ID,
-      range: "Productos!A2:E",
+      range: "Productos!A2:F",
     });
-    const rows = res.data.values || []; // Asegúrate de que 'rows' sea un array vacío si no hay datos
+    const rows = res.data.values || []; // Asegura que 'rows' sea un array vacío si no hay datos.
 
     let lastId = 0;
     if (rows.length > 0) {
       lastId = parseInt(rows[rows.length - 1][0]);
     }
 
-    const products = rows.map((row) => {
-      const product = {
-        id: row[0],
-        nombre: row[1],
-        stock: parseInt(row[2]),
-        precio: parseInt(row[3]),
-        publicado: row[4],
-      };
+    const products = await Promise.all(
+      rows.map(async (row) => {
+        let clientName = "";
 
-      // Filtra las propiedades que no están vacías o undefined
-      return Object.fromEntries(
-        Object.entries(product).filter(
-          ([_, value]) => value !== undefined && value !== ""
-        )
-      );
+        if (row[5]) {
+          // Verifica si el ID de cliente existe y no está vacío
+          const client = await getClientById(auth, row[5]);
+          clientName = client?.nombre || "";
+        }
+
+        // Crea el objeto de producto con o sin cliente
+        const product = {
+          id: row[0],
+          nombre: row[1],
+          stock: parseInt(row[2]),
+          precio: parseInt(row[3]),
+          publicado: row[4],
+          client: clientName,
+        };
+
+        // Filtra los valores vacíos o indefinidos
+        return Object.fromEntries(
+          Object.entries(product).filter(
+            ([_, value]) => value !== undefined && value !== ""
+          )
+        );
+      })
+    );
+
+    return { products, lastId };
+  } catch (error) {
+    console.log({ error: error.message });
+    throw new Error(error.message);
+  }
+}
+
+async function getProductByClientID(auth, clientId) {
+  try {
+    const sheets = google.sheets({ version: "v4", auth });
+    const res = await sheets.spreadsheets.values.get({
+      spreadsheetId: process.env.GOOGLE_SHEETS_ID,
+      range: "Productos!A2:F",
     });
+    const rows = res.data.values || [];
+
+    let lastId = 0;
+    if (rows.length > 0) {
+      lastId = parseInt(rows[rows.length - 1][0]);
+    }
+
+    const productMap = {};
+
+    await Promise.all(
+      rows.map(async (row) => {
+        let client = null;
+
+        if (row[5]) {
+          client = await getClientById(auth, row[5]);
+        }
+
+        // Crea el objeto de producto con o sin cliente
+        const product = {
+          id: row[0],
+          nombre: row[1],
+          stock: parseInt(row[2]),
+          precio: parseInt(row[3]),
+          publicado: row[4],
+          clientId: client?.id || null,
+          clientName: client?.nombre || null,
+        };
+
+        if (productMap[product.nombre]) {
+          if (product.clientId === clientId) {
+            productMap[product.nombre] = product;
+          }
+        } else {
+          productMap[product.nombre] = product;
+        }
+      })
+    );
+
+    const products = Object.values(productMap);
 
     return { products, lastId };
   } catch (error) {
@@ -72,15 +140,9 @@ async function appendRow(auth, rowData) {
   const sheets = google.sheets({ version: "v4", auth });
   const { lastId } = await getSheetData(auth);
   const newId = lastId + 1;
-  const { nombre, stock, precio } = rowData;
+  const { nombre, stock, precio, clientId } = rowData;
   const publicadoValue = "no"; // Nueva variable para el valor de publicado
-  const newRow = [
-    newId,
-    nombre,
-    stock,
-    precio,
-    publicadoValue, // Usar la nueva variable aquí
-  ];
+  const newRow = [newId, nombre, stock, precio, publicadoValue, clientId || ""];
   const res = await sheets.spreadsheets.values.append({
     spreadsheetId: process.env.GOOGLE_SHEETS_ID,
     range: "Productos!A2:E",
@@ -226,6 +288,63 @@ async function activeProductById(auth, id) {
   };
 }
 
+async function createProductoByClientId(auth, body, id) {
+  try {
+    const client = await getClientById(auth, id);
+    const clientId = client.id;
+
+    const newProduct = {
+      ...body,
+      clientId,
+    };
+
+    // Obtener los productos actuales
+    const sheets = google.sheets({ version: "v4", auth });
+    const res = await sheets.spreadsheets.values.get({
+      spreadsheetId: process.env.GOOGLE_SHEETS_ID,
+      range: "Productos!A2:F",
+    });
+    const rows = res.data.values || [];
+
+    // Buscar el índice del producto con el mismo nombre y clientId
+    const existingProductIndex = rows.findIndex(
+      (row) => row[1] === newProduct.nombre && row[5] === clientId
+    );
+
+    if (existingProductIndex !== -1) {
+      // Si el producto ya existe, actualízalo con los nuevos datos
+      const range = `Productos!A${existingProductIndex + 2}:F${
+        existingProductIndex + 2
+      }`;
+      await sheets.spreadsheets.values.update({
+        spreadsheetId: process.env.GOOGLE_SHEETS_ID,
+        range,
+        valueInputOption: "RAW",
+        requestBody: {
+          values: [
+            [
+              newProduct.id || rows[existingProductIndex][0], // ID del producto
+              newProduct.nombre,
+              newProduct.stock || rows[existingProductIndex][2], // Stock
+              newProduct.precio || rows[existingProductIndex][3], // Precio
+              newProduct.publicado || rows[existingProductIndex][4], // Publicado
+              newProduct.clientId,
+            ],
+          ],
+        },
+      });
+      return { message: "Producto actualizado correctamente" };
+    } else {
+      // Si el producto no existe, agrégalo
+      const result = await appendRow(auth, newProduct);
+      return result;
+    }
+  } catch (error) {
+    console.error("Error al crear o actualizar el producto:", error.message);
+    throw new Error(error.message);
+  }
+}
+
 module.exports = {
   getSheetData,
   getSheetDataById,
@@ -233,4 +352,6 @@ module.exports = {
   updateRow,
   deleteRowById,
   activeProductById,
+  createProductoByClientId,
+  getProductByClientID,
 };

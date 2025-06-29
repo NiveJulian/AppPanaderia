@@ -1,9 +1,7 @@
 const { Router } = require("express");
 const sheetsRouter = Router();
 const {
-  authorize,
   increaseStock,
-  decreaseStock,
   deleteSalesById,
   getSaleData,
   getCashFlow,
@@ -15,6 +13,7 @@ const {
   getWeeklySalesByClient,
   getSaleByClientId,
   getWeeklySalesByUser,
+  getSaleById,
 } = require("../Controllers/sheets/sheetsController.js");
 const {
   getSheetData,
@@ -24,13 +23,14 @@ const {
   deleteRowById,
   createProductoByClientId,
   getProductByClientID,
+  decreaseStock,
+  checkProductSales,
 } = require("../Controllers/sheets/productController.js");
 
 sheetsRouter.get("/data/client/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const auth = await authorize();
-    const data = await getProductByClientID(auth, id);
+    const data = await getProductByClientID(id);
     res.json(data);
   } catch (error) {
     console.log({ error: error.message });
@@ -40,8 +40,7 @@ sheetsRouter.get("/data/client/:id", async (req, res) => {
 
 sheetsRouter.get("/data", async (req, res) => {
   try {
-    const auth = await authorize();
-    const data = await getSheetData(auth);
+    const data = await getSheetData();
     res.json(data);
   } catch (error) {
     console.log({ error: error.message });
@@ -52,8 +51,7 @@ sheetsRouter.get("/data", async (req, res) => {
 sheetsRouter.get("/data/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const auth = await authorize();
-    const data = await getSheetDataById(id, auth);
+    const data = await getSheetDataById(id);
     res.json(data);
   } catch (error) {
     console.log({ error: error.message });
@@ -63,9 +61,9 @@ sheetsRouter.get("/data/:id", async (req, res) => {
 
 sheetsRouter.post("/data", async (req, res) => {
   try {
-    const auth = await authorize();
     const data = req.body;
-    const updates = await appendRow(auth, data);
+    console.log(data);
+    const updates = await appendRow(data);
     res.json(updates);
   } catch (error) {
     console.log({ error: error.message });
@@ -75,20 +73,18 @@ sheetsRouter.post("/data", async (req, res) => {
 
 sheetsRouter.put("/update", async (req, res) => {
   try {
-    const auth = await authorize();
     const rowData = req.body;
-    const result = await updateRow(auth, rowData);
+    const result = await updateRow(rowData);
     res.json(result);
   } catch (error) {
     res.status(500).send(error.message);
   }
 });
 
-sheetsRouter.delete("/delete/:rowIndex", async (req, res) => {
+sheetsRouter.delete("/delete/:id", async (req, res) => {
   try {
-    const auth = await authorize();
-    const rowIndex = parseInt(req.params.rowIndex, 10);
-    const result = await deleteRowById(auth, rowIndex);
+    const id = req.params.id;
+    const result = await deleteRowById(id);
     res.status(200).json(result);
   } catch (error) {
     console.log({ error: error.message });
@@ -98,9 +94,8 @@ sheetsRouter.delete("/delete/:rowIndex", async (req, res) => {
 
 sheetsRouter.put("/product/:id", async (req, res) => {
   try {
-    const auth = await authorize();
     const rowIndex = parseInt(req.params.id, 10);
-    const result = await activeProductById(auth, rowIndex);
+    const result = await activeProductById(rowIndex);
     res.status(200).json(result);
   } catch (error) {
     console.log({ error: error.message });
@@ -110,10 +105,9 @@ sheetsRouter.put("/product/:id", async (req, res) => {
 
 sheetsRouter.post("/product-client/:clientId", async (req, res) => {
   try {
-    const auth = await authorize();
     const body = req.body;
     const clientId = req.params.clientId;
-    const result = await createProductoByClientId(auth, body, clientId);
+    const result = await createProductoByClientId(body, clientId);
     res.status(200).json(result);
   } catch (error) {
     console.log({ error: error.message });
@@ -123,8 +117,8 @@ sheetsRouter.post("/product-client/:clientId", async (req, res) => {
 
 sheetsRouter.get("/sale", async (req, res) => {
   try {
-    const auth = await authorize();
-    const sale = await getSaleData(auth);
+    const sale = await getSaleData();
+    console.log(sale);
     res.json(sale.salesData);
   } catch (error) {
     console.log({ errorSale: error.message });
@@ -134,8 +128,7 @@ sheetsRouter.get("/sale", async (req, res) => {
 
 sheetsRouter.get("/sales/weekly", async (req, res) => {
   try {
-    const auth = await authorize();
-    const weeklySalesTotal = await getWeeklySalesByClient(auth);
+    const weeklySalesTotal = await getWeeklySalesByClient();
     if (!weeklySalesTotal) {
       return res
         .status(404)
@@ -148,11 +141,26 @@ sheetsRouter.get("/sales/weekly", async (req, res) => {
   }
 });
 
-sheetsRouter.get("/sale/:id", async (req, res) => {
+sheetsRouter.get("/sales/:id", async (req, res) => {
   try {
-    const auth = await authorize();
+    const userId = req.params.id;
+    const sales = await getSaleDataUnitiInfo(userId);
+
+    if (sales.length === 0) {
+      return res.status(404).json({ message: "Ventas no encontradas" });
+    }
+
+    res.json(sales);
+  } catch (error) {
+    console.error("Error:", error);
+    res.status(500).send(error.message);
+  }
+});
+
+sheetsRouter.get("/sale/id/:id", async (req, res) => {
+  try {
     const saleId = req.params.id;
-    const sales = await getSaleDataUnitiInfo(auth, saleId);
+    const sales = await getSaleById(saleId);
 
     if (sales.length === 0) {
       return res.status(404).json({ message: "Ventas no encontradas" });
@@ -168,8 +176,7 @@ sheetsRouter.get("/sale/:id", async (req, res) => {
 sheetsRouter.put("/sale/:id/changestate/:state", async (req, res) => {
   try {
     const { id, state } = req.params;
-    const auth = await authorize();
-    const saleChanged = await putSaleChangeState(auth, id, state);
+    const saleChanged = await putSaleChangeState(id, state);
 
     res.json(saleChanged);
   } catch (error) {
@@ -181,9 +188,7 @@ sheetsRouter.put("/sale/:id/changestate/:state", async (req, res) => {
 sheetsRouter.post("/sale/dashboard", async (req, res) => {
   try {
     const data = req.body;
-    // console.log(data)
-    const auth = await authorize();
-    const sale = await registerSaleDashboard(auth, data);
+    const sale = await registerSaleDashboard(data);
     res.json(sale);
   } catch (error) {
     // console.log({ error: error.message });
@@ -195,8 +200,7 @@ sheetsRouter.get("/sales/client/:id", async (req, res) => {
   try {
     const id = req.params.id;
     // console.log(id)
-    const auth = await authorize();
-    const sale = await getSaleByClientId(auth, id);
+    const sale = await getSaleByClientId(id);
     res.json(sale);
   } catch (error) {
     // console.log({ error: error.message });
@@ -204,109 +208,133 @@ sheetsRouter.get("/sales/client/:id", async (req, res) => {
   }
 });
 
-sheetsRouter.get("/sales/:uid", async (req, res) => {
+sheetsRouter.get("/sales/user/:uid", async (req, res) => {
   try {
-    const { uid } = req.params;
-
-    const authClient = await authorize();
-
-    const sales = await getSaleByUserId(authClient, uid);
-    // console.log(sales)
-    res.status(200).json(sales);
+    const uid = req.params.uid;
+    const sales = await getSaleByUserId(uid);
+    res.json(sales);
   } catch (error) {
-    res.status(500).json({
-      message: "Error obteniendo ventas por UID",
-      error: error.message,
-    });
+    console.log({ error: error.message });
+    res.status(500).send(error.message);
   }
 });
 
-sheetsRouter.get("/sales/weekly/:uid", async (req, res) => {
+sheetsRouter.get("/sales/weekly/user/:uid", async (req, res) => {
   try {
-    const { uid } = req.params;
-
-    const auth = await authorize();
-    const weeklySalesTotal = await getWeeklySalesByUser(auth, uid);
-    if (!weeklySalesTotal) {
-      return res
-        .status(404)
-        .json({ error: "No se encontraron ventas en la semana" });
-    }
-
-    res.status(200).json({ total: weeklySalesTotal });
+    const uid = req.params.uid;
+    const weeklySales = await getWeeklySalesByUser(uid);
+    res.json(weeklySales);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.log({ error: error.message });
+    res.status(500).send(error.message);
   }
 });
 
-sheetsRouter.delete("/delete/sale/:id", async (req, res) => {
+sheetsRouter.get("/sales/weekly/client/:clientId", async (req, res) => {
   try {
-    const auth = await authorize();
-    const id = req.params.id;
-    const result = await deleteSalesById(auth, id);
-    res.status(200).json(result);
+    const clientId = req.params.clientId;
+    const weeklySales = await getWeeklyAllSalesByClient(clientId);
+    res.json(weeklySales);
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.log({ error: error.message });
+    res.status(500).send(error.message);
+  }
+});
+
+sheetsRouter.get("/sales/date/:date", async (req, res) => {
+  try {
+    const date = req.params.date;
+    const sales = await getSalesByDate(date);
+    res.json(sales);
+  } catch (error) {
+    console.log({ error: error.message });
+    res.status(500).send(error.message);
   }
 });
 
 sheetsRouter.put("/increase-stock", async (req, res) => {
   try {
-    const auth = await authorize();
     const { productId, amount } = req.body;
-    const result = await increaseStock(auth, productId, amount);
+    const result = await increaseStock(productId, amount);
     res.json(result);
   } catch (error) {
+    console.log({ error: error.message });
     res.status(500).send(error.message);
   }
 });
 
 sheetsRouter.put("/decrease-stock", async (req, res) => {
   try {
-    const auth = await authorize();
     const { productId, amount } = req.body;
-    const result = await decreaseStock(auth, productId, amount);
+    const result = await decreaseStock(productId, amount);
     res.json(result);
   } catch (error) {
+    console.log({ error: error.message });
     res.status(500).send(error.message);
   }
 });
 
-sheetsRouter.get("/cashflow", async (req, res) => {
+sheetsRouter.delete("/sale/:id", async (req, res) => {
   try {
-    const auth = await authorize(); // Asegúrate de que authorize está correctamente implementado
-    const cashFlow = await getCashFlow(auth);
-
-    // Verificar que cashFlowData exista antes de enviarlo
-    if (cashFlow && cashFlow.cashFlowData) {
-      res.json(cashFlow.cashFlowData);
-    } else {
-      res
-        .status(404)
-        .json({ message: "No se encontraron datos de flujo de caja." });
-    }
+    const id = req.params.id;
+    const result = await deleteSalesById(id);
+    res.json(result);
   } catch (error) {
-    console.error("Error al obtener el flujo de caja:", error.message);
-    res.status(500).json({ error: error.message });
+    console.log({ error: error.message });
+    res.status(500).send(error.message);
   }
 });
 
-sheetsRouter.post("/cashflow/add", async (req, res) => {
+sheetsRouter.get("/cash-flow", async (req, res) => {
   try {
-    const auth = await authorize();
-    const { tipo, monto, descripcion, fecha } = req.body; // Asegúrate de enviar estos datos desde el frontend
-    const result = await addCashFlowEntry(auth, {
-      tipo,
-      monto,
-      descripcion,
-      fecha,
-    });
+    const { date } = req.query;
+    const cashFlow = await getCashFlow(date);
+    res.json(cashFlow);
+  } catch (error) {
+    console.log({ error: error.message });
+    res.status(500).send(error.message);
+  }
+});
+
+sheetsRouter.post("/cash-flow", async (req, res) => {
+  try {
+    const data = req.body;
+    const result = await addCashFlowEntry(data);
     res.json(result);
   } catch (error) {
-    console.error(
-      "Error al agregar el movimiento al flujo de caja:",
-      error.message
-    );
+    console.log({ error: error.message });
+    res.status(500).send(error.message);
+  }
+});
+
+sheetsRouter.post("/payment", async (req, res) => {
+  try {
+    const rowData = req.body;
+    const result = await appendRowPayment(rowData);
+    res.json(result);
+  } catch (error) {
+    console.log({ error: error.message });
+    res.status(500).send(error.message);
+  }
+});
+
+sheetsRouter.get("/sales/all", async (req, res) => {
+  try {
+    const sales = await getSaleData();
+    res.json(sales.salesData);
+  } catch (error) {
+    console.log({ error: error.message });
+    res.status(500).send(error.message);
+  }
+});
+
+sheetsRouter.get("/product/:id/sales-check", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await checkProductSales(id);
+    res.json(result);
+  } catch (error) {
+    console.log({ error: error.message });
     res.status(500).json({ error: error.message });
   }
 });

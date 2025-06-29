@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import validationProductForm from "./validationClienteForm";
 import toast from "react-hot-toast";
 import {
@@ -7,13 +7,17 @@ import {
   createProductByClientId,
   updateRow,
 } from "../../../redux/actions/productActions";
+import { getClients } from "../../../redux/actions/clientActions";
 
 export default function TabFormCreateProduct({ isOpen, onClose, product }) {
   const dispatch = useDispatch();
+  const { clientes } = useSelector((state) => state.client);
+
   const [formData, setFormData] = useState({
     nombre: "",
     cantidad: "",
     precio: 0,
+    clientId: "",
   });
   const [errors, setErrors] = useState({});
   const memoizedErrors = useMemo(() => {
@@ -25,12 +29,26 @@ export default function TabFormCreateProduct({ isOpen, onClose, product }) {
   }, [memoizedErrors]);
 
   useEffect(() => {
+    if (isOpen) {
+      dispatch(getClients());
+    }
+  }, [isOpen, dispatch]);
+
+  useEffect(() => {
     if (product) {
       setFormData({
         id: product.id || "",
         nombre: product.nombre || "",
         cantidad: product.stock || "",
         precio: product.precio || "",
+        clientId: product.clientId || "",
+      });
+    } else {
+      setFormData({
+        nombre: "",
+        cantidad: "",
+        precio: 0,
+        clientId: "",
       });
     }
   }, [product]);
@@ -54,21 +72,26 @@ export default function TabFormCreateProduct({ isOpen, onClose, product }) {
           precio: formData.precio,
         };
 
-        if (product.clientId === " ") {
+        if (product && product.id) {
           const updatedRows = {
             id: formData.id,
             nombre: formData.nombre,
             stock: formData.cantidad,
             precio: formData.precio,
           };
-
           dispatch(updateRow(updatedRows));
-        } else if (product.clientId !== " ") {
-          dispatch(createProductByClientId(product.clientId, newRow));
+        } else if (formData.clientId && formData.clientId !== "") {
+          dispatch(createProductByClientId(formData.clientId, newRow));
         } else {
           dispatch(addSheetRow(newRow));
         }
-        setFormData({});
+
+        setFormData({
+          nombre: "",
+          cantidad: "",
+          precio: 0,
+          clientId: "",
+        });
         onClose();
       } catch (error) {
         toast.error("Error al crear el nuevo producto");
@@ -88,6 +111,7 @@ export default function TabFormCreateProduct({ isOpen, onClose, product }) {
         >
           &times;
         </button>
+
         <div className="mt-2">
           <label htmlFor="nombre">Nombre</label>
           <input
@@ -105,6 +129,32 @@ export default function TabFormCreateProduct({ isOpen, onClose, product }) {
             <p className="text-red-500 text-xs">{errors.nombre}</p>
           )}
         </div>
+
+        {!product && (
+          <div className="mt-2">
+            <label htmlFor="clientId">Cliente (opcional)</label>
+            <select
+              className={`bg-white w-full p-2 text-center mt-2 rounded-md border ${
+                errors.clientId ? "border-red-500" : "border-gray-400"
+              }`}
+              id="clientId"
+              name="clientId"
+              value={formData.clientId}
+              onChange={handleChange}
+            >
+              <option value="">Seleccionar cliente (opcional)</option>
+              {clientes.map((cliente) => (
+                <option key={cliente.id} value={cliente.id}>
+                  {cliente.name}
+                </option>
+              ))}
+            </select>
+            {errors.clientId && (
+              <p className="text-red-500 text-xs">{errors.clientId}</p>
+            )}
+          </div>
+        )}
+
         <div className="mt-2">
           <label htmlFor="cantidad">Cantidad</label>
           <input
@@ -122,6 +172,7 @@ export default function TabFormCreateProduct({ isOpen, onClose, product }) {
             <p className="text-red-500 text-xs">{errors.stock}</p>
           )}
         </div>
+
         <div className="mt-2">
           <label htmlFor="precio">Precio</label>
           <input

@@ -1,347 +1,320 @@
-const { google } = require("googleapis");
-const { auth } = require("googleapis/build/src/apis/abusiveexperiencereport");
-const { getClientById } = require("./clientController");
+const { PrismaClient } = require('../../generated/prisma/client');
+const prisma = new PrismaClient();
 
-async function getSheetData(auth) {
+async function getSheetData() {
   try {
-    const sheets = google.sheets({ version: "v4", auth });
-    const res = await sheets.spreadsheets.values.get({
-      spreadsheetId: process.env.GOOGLE_SHEETS_ID,
-      range: "Productos!A2:F",
-    });
-    const rows = res.data.values || []; // Asegura que 'rows' sea un array vacío si no hay datos.
-
-    let lastId = 0;
-    if (rows.length > 0) {
-      lastId = parseInt(rows[rows.length - 1][0]);
-    }
-
-    const products = await Promise.all(
-      rows.map(async (row) => {
-        let clientName = "";
-
-        if (row[5]) {
-          // Verifica si el ID de cliente existe y no está vacío
-          const client = await getClientById(auth, row[5]);
-          clientName = client?.nombre || "";
-        }
-
-        // Crea el objeto de producto con o sin cliente
-        const product = {
-          id: row[0],
-          nombre: row[1],
-          stock: parseInt(row[2]),
-          precio: parseInt(row[3]),
-          publicado: row[4],
-          client: clientName,
-        };
-
-        // Filtra los valores vacíos o indefinidos
-        return Object.fromEntries(
-          Object.entries(product).filter(
-            ([_, value]) => value !== undefined && value !== ""
-          )
-        );
-      })
-    );
-
-    return { products, lastId };
-  } catch (error) {
-    console.log({ error: error.message });
-    throw new Error(error.message);
-  }
-}
-
-async function getProductByClientID(auth, clientId) {
-  try {
-    const sheets = google.sheets({ version: "v4", auth });
-    const res = await sheets.spreadsheets.values.get({
-      spreadsheetId: process.env.GOOGLE_SHEETS_ID,
-      range: "Productos!A2:F",
-    });
-    const rows = res.data.values || [];
-
-    let lastId = 0;
-    if (rows.length > 0) {
-      lastId = parseInt(rows[rows.length - 1][0]);
-    }
-
-    const productMap = {};
-
-    await Promise.all(
-      rows.map(async (row) => {
-        let client = null;
-
-        if (row[5]) {
-          client = await getClientById(auth, row[5]);
-        }
-
-        // Crea el objeto de producto con o sin cliente
-        const product = {
-          id: row[0],
-          nombre: row[1],
-          stock: parseInt(row[2]),
-          precio: parseInt(row[3]),
-          publicado: row[4],
-          clientId: client?.id || null,
-          clientName: client?.nombre || null,
-        };
-
-        if (productMap[product.nombre]) {
-          if (product.clientId === clientId) {
-            productMap[product.nombre] = product;
-          }
-        } else {
-          productMap[product.nombre] = product;
-        }
-      })
-    );
-
-    const products = Object.values(productMap);
-
-    return { products, lastId };
-  } catch (error) {
-    console.log({ error: error.message });
-    throw new Error(error.message);
-  }
-}
-
-async function getSheetDataById(id, auth) {
-  try {
-    const sheets = google.sheets({ version: "v4", auth });
-    const res = await sheets.spreadsheets.values.get({
-      spreadsheetId: process.env.GOOGLE_SHEETS_ID,
-      range: "Productos!A2:E",
-    });
-    const rows = res.data.values || [];
-
-    const products = rows.map((row) => ({
-      id: row[0],
-      nombre: row[1],
-      stock: row[2],
-      precio: row[3],
-      publicado: row[4],
-    }));
-
-    const product = products.find((product) => product.id === id.toString());
-
-    if (!product) {
-      throw new Error("Producto no encontrado");
-    }
-
-    return product;
-  } catch (error) {
-    console.log({ error: error.message });
-    throw error;
-  }
-}
-
-async function appendRow(auth, rowData) {
-  const sheets = google.sheets({ version: "v4", auth });
-  const { lastId } = await getSheetData(auth);
-  const newId = lastId + 1;
-  const { nombre, stock, precio, clientId } = rowData;
-  const publicadoValue = "no"; // Nueva variable para el valor de publicado
-  const newRow = [newId, nombre, stock, precio, publicadoValue, clientId || ""];
-  const res = await sheets.spreadsheets.values.append({
-    spreadsheetId: process.env.GOOGLE_SHEETS_ID,
-    range: "Productos!A2:E",
-    valueInputOption: "RAW",
-    resource: {
-      values: [newRow],
-    },
-  });
-  return res.data.updates;
-}
-
-async function updateRow(auth, rowData) {
-  const sheets = google.sheets({ version: "v4", auth });
-
-  // Obtener los datos actuales de la hoja
-  const { products } = await getSheetData(auth);
-
-  // Buscar el índice de la fila correspondiente usando el ID
-  const rowIndex = products.findIndex((product) => product.id === rowData.id);
-
-  // Lanzar un error si el ID no se encuentra
-  if (rowIndex === -1) {
-    throw new Error("ID no encontrado");
-  }
-
-  // Construir la fila actualizada con los datos de rowData
-  const updatedRow = [
-    rowData.id,
-    rowData.nombre,
-    rowData.stock,
-    rowData.precio,
-    rowData.publicado,
-  ];
-
-  // Actualizar la fila en la hoja de cálculo
-  const res = await sheets.spreadsheets.values.update({
-    spreadsheetId: process.env.GOOGLE_SHEETS_ID,
-    range: `Productos!A${rowIndex + 2}:E${rowIndex + 2}`,
-    valueInputOption: "RAW",
-    resource: {
-      values: [updatedRow],
-    },
-  });
-
-  return res.data;
-}
-
-async function deleteRowById(auth, id) {
-  const sheets = google.sheets({ version: "v4", auth });
-
-  // Obtener todos los datos de la hoja
-  const getRows = await sheets.spreadsheets.values.get({
-    spreadsheetId: process.env.GOOGLE_SHEETS_ID,
-    range: "Productos!A:E", // Ajusta el rango según sea necesario
-  });
-
-  const rows = getRows.data.values;
-  let rowIndexToDelete = null;
-
-  // Encontrar la fila con el ID proporcionado
-  for (let i = 0; i < rows.length; i++) {
-    if (rows[i][0] == id) {
-      // Asumiendo que la columna ID es la primera (A)
-      rowIndexToDelete = i;
-      break;
-    }
-  }
-
-  if (rowIndexToDelete === null) {
-    throw new Error("ID not found");
-  }
-
-  // Eliminar la fila encontrada
-  const requests = [
-    {
-      deleteDimension: {
-        range: {
-          sheetId: 0, // Asegúrate de que este sea el ID correcto de la hoja
-          dimension: "ROWS",
-          startIndex: rowIndexToDelete,
-          endIndex: rowIndexToDelete + 1,
+    const products = await prisma.product.findMany({
+      include: {
+        client: {
+          select: {
+            id: true,
+            name: true,
+          },
         },
       },
-    },
-  ];
-
-  const res = await sheets.spreadsheets.batchUpdate({
-    spreadsheetId: process.env.GOOGLE_SHEETS_ID,
-    resource: {
-      requests,
-    },
-  });
-
-  return res.data;
-}
-
-async function activeProductById(auth, id) {
-  const sheets = google.sheets({ version: "v4", auth });
-
-  // Obtener todos los datos de la hoja
-  const getRows = await sheets.spreadsheets.values.get({
-    spreadsheetId: process.env.GOOGLE_SHEETS_ID,
-    range: "Productos!A:E", // Ajusta el rango para incluir hasta la columna J
-  });
-
-  const rows = getRows.data.values;
-  let rowIndexToUpdate = null;
-
-  // Encontrar la fila con el ID proporcionado
-  for (let i = 0; i < rows.length; i++) {
-    if (rows[i][0] == id) {
-      // Asumiendo que la columna ID es la primera (A)
-      rowIndexToUpdate = i;
-      break;
-    }
-  }
-
-  if (rowIndexToUpdate === null) {
-    throw new Error("ID not found");
-  }
-
-  // Obtener el valor actual de la columna "Publicado" (columna J, índice 9)
-  const currentPublishedValue = rows[rowIndexToUpdate][9];
-  const newPublishedValue = currentPublishedValue === "si" ? "no" : "si"; // Alternar entre "si" y "no"
-
-  // Actualizar la celda con el nuevo valor
-  const updateResponse = await sheets.spreadsheets.values.update({
-    spreadsheetId: process.env.GOOGLE_SHEETS_ID,
-    range: `Productos!J${rowIndexToUpdate + 1}`, // J es la columna 10, sumamos 1 al índice para la referencia en Sheets
-    valueInputOption: "USER_ENTERED",
-    resource: {
-      values: [[newPublishedValue]],
-    },
-  });
-
-  // Determinar el estado de "Publicado" y enviar el mensaje correspondiente
-  const statusMessage =
-    newPublishedValue === "si" ? "publicado" : "no publicado";
-
-  return {
-    message: `El producto cambio a ${statusMessage}.`,
-    updateResponse: updateResponse.data,
-  };
-}
-
-async function createProductoByClientId(auth, body, id) {
-  try {
-    const client = await getClientById(auth, id);
-    const clientId = client.id;
-
-    const newProduct = {
-      ...body,
-      clientId,
-    };
-
-    // Obtener los productos actuales
-    const sheets = google.sheets({ version: "v4", auth });
-    const res = await sheets.spreadsheets.values.get({
-      spreadsheetId: process.env.GOOGLE_SHEETS_ID,
-      range: "Productos!A2:F",
+      orderBy: {
+        id: "asc",
+      },
     });
-    const rows = res.data.values || [];
 
-    // Buscar el índice del producto con el mismo nombre y clientId
-    const existingProductIndex = rows.findIndex(
-      (row) => row[1] === newProduct.nombre && row[5] === clientId
+    const productsFormatted = await Promise.all(
+      products.map(async (product) => {
+        let clientName = "";
+
+        if (product.client) {
+          clientName = product.client.name;
+        }
+
+        return {
+          id: product.id,
+          nombre: product.name,
+          cantidad: product.stock,
+          precio: product.price,
+          publicado: product.published,
+          cliente: clientName,
+          clienteId: product.clientId,
+        };
+      })
     );
 
-    if (existingProductIndex !== -1) {
-      // Si el producto ya existe, actualízalo con los nuevos datos
-      const range = `Productos!A${existingProductIndex + 2}:F${
-        existingProductIndex + 2
-      }`;
-      await sheets.spreadsheets.values.update({
-        spreadsheetId: process.env.GOOGLE_SHEETS_ID,
-        range,
-        valueInputOption: "RAW",
-        requestBody: {
-          values: [
-            [
-              newProduct.id || rows[existingProductIndex][0], // ID del producto
-              newProduct.nombre,
-              newProduct.stock || rows[existingProductIndex][2], // Stock
-              newProduct.precio || rows[existingProductIndex][3], // Precio
-              newProduct.publicado || rows[existingProductIndex][4], // Publicado
-              newProduct.clientId,
-            ],
-          ],
-        },
-      });
-      return { message: "Producto actualizado correctamente" };
-    } else {
-      // Si el producto no existe, agrégalo
-      const result = await appendRow(auth, newProduct);
-      return result;
-    }
+    return { products: productsFormatted };
   } catch (error) {
-    console.error("Error al crear o actualizar el producto:", error.message);
+    console.log({ error: error.message });
+    throw new Error("Error retrieving products data");
+  }
+}
+
+async function getSheetDataById(id) {
+  try {
+    const product = await prisma.product.findUnique({
+      where: { id },
+      include: {
+        client: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    });
+
+    if (!product) {
+      throw new Error("Product not found");
+    }
+
+    return {
+      id: product.id,
+      nombre: product.name,
+      cantidad: product.stock,
+      precio: product.price,
+      publicado: product.published,
+      cliente: product.client ? product.client.name : "",
+      clienteId: product.clientId,
+      createdAt: product.createdAt,
+      updatedAt: product.updatedAt,
+    };
+  } catch (error) {
+    console.log({ error: error.message });
+    throw new Error("Error retrieving product data");
+  }
+}
+
+async function appendRow(data) {
+  try {
+    const { nombre, cantidad, precio, clientId } = data;
+
+    const product = await prisma.product.create({
+      data: {
+        name: nombre,
+        stock: parseInt(cantidad) || 0,
+        price: parseFloat(precio) || 0,
+        clientId: clientId || null,
+        published: true,
+      },
+      include: {
+        client: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    });
+
+    return {
+      message: "Product created successfully",
+      product: {
+        id: product.id,
+        nombre: product.name,
+        cantidad: product.stock,
+        precio: product.price,
+        publicado: product.published,
+        cliente: product.client ? product.client.name : "",
+        clienteId: product.clientId,
+      },
+    };
+  } catch (error) {
+    console.log({ error: error.message });
+    throw new Error("Error creating product");
+  }
+}
+
+async function updateRow(data) {
+  try {
+    const { id, nombre, cantidad, precio, publicado, clientId } = data;
+
+    const product = await prisma.product.update({
+      where: { id },
+      data: {
+        name: nombre,
+        stock: parseInt(cantidad) || 0,
+        price: parseFloat(precio) || 0,
+        published: publicado,
+        clientId: clientId || null,
+      },
+      include: {
+        client: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    });
+
+    return {
+      message: "Product updated successfully",
+      product: {
+        id: product.id,
+        nombre: product.name,
+        cantidad: product.stock,
+        precio: product.price,
+        publicado: product.published,
+        cliente: product.client ? product.client.name : "",
+        clienteId: product.clientId,
+      },
+    };
+  } catch (error) {
+    console.log({ error: error.message });
+    throw new Error("Error updating product");
+  }
+}
+
+async function deleteRowById(id) {
+  try {
+    // Verificar si el producto tiene ventas asociadas
+    const salesCount = await prisma.sale.count({
+      where: { productId: id }
+    });
+
+    if (salesCount > 0) {
+      throw new Error(`No se puede eliminar el producto porque tiene ${salesCount} venta(s) asociada(s). Elimine las ventas primero.`);
+    }
+
+    const product = await prisma.product.delete({
+      where: { id },
+    });
+
+    return {
+      message: "Product deleted successfully",
+      product: {
+        id: product.id,
+        nombre: product.name,
+      },
+    };
+  } catch (error) {
+    console.log({ error: error.message });
     throw new Error(error.message);
+  }
+}
+
+async function createProductoByClientId(data, clientId) {
+  try {
+    const { nombre, cantidad, precio } = data;
+
+    const product = await prisma.product.create({
+      data: {
+        name: nombre,
+        stock: parseInt(cantidad) || 0,
+        price: parseFloat(precio) || 0,
+        clientId: clientId,
+        published: true,
+      },
+      include: {
+        client: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    });
+
+    return {
+      message: "Product created successfully for client",
+      product: {
+        id: product.id,
+        nombre: product.name,
+        cantidad: product.stock,
+        precio: product.price,
+        publicado: product.published,
+        cliente: product.client ? product.client.name : "",
+        clienteId: product.clientId,
+      },
+    };
+  } catch (error) {
+    console.log({ error: error.message });
+    throw new Error("Error creating product for client");
+  }
+}
+
+async function getProductByClientID(clientId) {
+  try {
+    const products = await prisma.product.findMany({
+      where: { clientId },
+      include: {
+        client: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+      orderBy: {
+        id: "desc",
+      },
+    });
+
+    const productsFormatted = products.map((product) => ({
+      id: product.id,
+      nombre: product.name,
+      cantidad: product.stock,
+      precio: product.price,
+      publicado: product.published,
+      cliente: product.client ? product.client.name : "",
+      clienteId: product.clientId,
+      createdAt: product.createdAt,
+      updatedAt: product.updatedAt,
+    }));
+
+    return { products: productsFormatted };
+  } catch (error) {
+    console.log({ error: error.message });
+    throw new Error("Error retrieving products for client");
+  }
+}
+
+async function decreaseStock(productId, amount) {
+  try {
+    const product = await prisma.product.findUnique({
+      where: { id: productId },
+    });
+
+    if (!product) {
+      throw new Error("ID no encontrado");
+    }
+
+    const newStock = product.stock - parseInt(amount);
+    
+    // Permitir stock negativo (ventas sin stock)
+    // if (newStock < 0) {
+    //   throw new Error("Stock insuficiente");
+    // }
+
+    const updatedProduct = await prisma.product.update({
+      where: { id: productId },
+      data: {
+        stock: newStock,
+      },
+    });
+
+    return {
+      message: "Stock decreased successfully",
+      product: {
+        id: updatedProduct.id,
+        nombre: updatedProduct.name,
+        stock: updatedProduct.stock,
+      },
+    };
+  } catch (error) {
+    console.log({ error: error.message });
+    throw new Error(error.message);
+  }
+}
+
+async function checkProductSales(id) {
+  try {
+    const salesCount = await prisma.sale.count({
+      where: { productId: id }
+    });
+
+    return {
+      hasSales: salesCount > 0,
+      salesCount: salesCount
+    };
+  } catch (error) {
+    console.log({ error: error.message });
+    throw new Error("Error checking product sales");
   }
 }
 
@@ -351,7 +324,8 @@ module.exports = {
   appendRow,
   updateRow,
   deleteRowById,
-  activeProductById,
   createProductoByClientId,
   getProductByClientID,
+  decreaseStock,
+  checkProductSales,
 };

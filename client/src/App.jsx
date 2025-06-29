@@ -17,6 +17,7 @@ import Balance from "./pages/dashboard/Balance";
 import PagePayment from "./pages/dashboard/PagePayment";
 import DashboardClientId from "./pages/dashboard/DashboardClientId";
 import SalesWeeklyByClient from "./pages/dashboard/SalesWeelyByClient";
+import WeeklySales from "./pages/dashboard/WeeklySales";
 
 
 function App() {
@@ -58,6 +59,7 @@ function App() {
             <Route path="/dashboard/products/:id/sales" element={<SalesWeeklyByClient />} />
             <Route path="/dashboard/sales" element={<Sales />} />
             <Route path="/dashboard/sales/:uid" element={<SalesForSeller />} />
+            <Route path="/dashboard/weekly-sales" element={<WeeklySales />} />
             <Route path="/dashboard/users" element={<Users />} />
             <Route path="/dashboard/balance" element={<Balance />} />
             <Route path="/dashboard/support" element={<Support />} />

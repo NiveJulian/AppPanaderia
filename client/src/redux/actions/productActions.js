@@ -135,6 +135,9 @@ export const deleteSheetRow = (rowIndex) => async (dispatch) => {
     }
   } catch (error) {
     console.log(error);
+    // Propagar el error para que el componente pueda manejarlo
+    const errorMessage = error.response?.data?.error || error.message || "Error al eliminar el producto";
+    throw new Error(errorMessage);
   }
 };
 
@@ -185,16 +188,15 @@ export const clearFilteredProducts = () => ({
 export const createProductByClientId = (id, data) => async (dispatch) => {
   try {
     const res = await instance.post(`/api/sheets/product-client/${id}`, data);
-    console.log(res);
+
     if (res.status === 200) {
       toast.success("Producto creado exitosamente");
       dispatch({
         type: CREATE_PRODUCT_BY_CLIENT_ID,
         payload: res.data,
       });
-      setTimeout(() => {
-        window.location.reload();
-      }, 1500);
+
+      dispatch(fetchSheets());
     }
   } catch (error) {
     console.log(error);
@@ -258,5 +260,20 @@ export const addCashFlowEntry = (entryData) => async (dispatch) => {
   } catch (error) {
     console.error("Error añadiendo entrada:", error);
     toast.error("Error añadiendo la entrada de flujo de caja");
+  }
+};
+
+export const checkProductSales = (productId) => async () => {
+  const token = localStorage.getItem("authToken");
+  try {
+    const res = await instance.get(`/api/sheets/product/${productId}/sales-check`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return res.data;
+  } catch (error) {
+    console.log(error);
+    throw new Error("Error checking product sales");
   }
 };

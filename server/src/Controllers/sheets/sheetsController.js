@@ -1,56 +1,12 @@
 require("dotenv").config();
-const { google } = require("googleapis");
-const { getUser } = require("../user/userController");
+const { PrismaClient } = require("../../generated/prisma/client");
+const prisma = new PrismaClient();
 const moment = require("moment");
-const { getSheetData, getSheetDataById } = require("./productController");
-const { getClients, getClientById } = require("./clientController");
 
-async function authorize() {
-  const auth = new google.auth.GoogleAuth({
-    credentials: {
-      type: "service_account",
-      project_id: process.env.GOOGLE_PROJECT_ID,
-      private_key_id: process.env.GOOGLE_PRIVATE_KEY_ID,
-      private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, "\n"),
-      client_email: process.env.GOOGLE_CLIENT_EMAIL,
-      client_id: process.env.GOOGLE_CLIENT_ID,
-      auth_uri: process.env.GOOGLE_AUTH_URI,
-      token_uri: process.env.GOOGLE_TOKEN_URI,
-      auth_provider_x509_cert_url:
-        process.env.GOOGLE_AUTH_PROVIDER_X509_CERT_URL,
-      client_x509_cert_url: process.env.GOOGLE_CLIENT_X509_CERT_URL,
-    },
-    scopes: ["https://www.googleapis.com/auth/spreadsheets"],
-  });
+async function registerSaleDashboard(data) {
   try {
-    const authClient = await auth.getClient();
-    return authClient;
-  } catch (error) {
-    console.error("Error during authentication", error);
-    throw error;
-  }
-}
-
-async function registerSaleDashboard(auth, data) {
-  try {
-    const sheets = google.sheets({ version: "v4", auth });
-
     const { productos, formaPago, total, idCliente, uid } = data;
 
-    const response = await sheets.spreadsheets.values.get({
-      spreadsheetId: process.env.GOOGLE_SHEETS_ID,
-      range: "Ventas!A:A",
-    });
-
-    const rows = response.data.values;
-    let lastId = 0;
-
-    if (rows && rows.length > 1) {
-      lastId = rows.length - 1;
-    }
-
-    const newId = lastId + 1;
-    const currentDate = new Date().toLocaleDateString("es-AR").slice(0, 10);
     const currentTime = new Date().toLocaleTimeString("es-AR", {
       hour: "2-digit",
       minute: "2-digit",
@@ -59,193 +15,278 @@ async function registerSaleDashboard(auth, data) {
 
     const statePayment = "Completada";
 
-    const cliente = await getClientById(auth, idCliente);
+    // Crear múltiples ventas para cada producto
+    const sales = await Promise.all(
+      productos.map(async (prod) => {
+        return prisma.sale.create({
+          data: {
+            productId: prod.id,
+            clientId: idCliente,
+            quantity: parseInt(prod.cantidad),
+            subtotal: parseFloat(prod.precio),
+            payment: formaPago,
+            orderStatus: statePayment,
+            total: parseFloat(prod.cantidad * prod.precio),
+            userId: uid,
+          },
+          include: {
+            product: true,
+            client: true,
+            user: true,
+          },
+        });
+      })
+    );
 
-    const ventaData = productos.map((prod) => [
-      newId,
-      prod.id,
-      cliente.id,
-      prod.cantidad,
-      prod.precio,
-      formaPago,
-      statePayment,
-      prod.cantidad * prod.precio,
-      currentDate,
-      currentTime,
-      uid,
-    ]);
-
-    const res = await sheets.spreadsheets.values.append({
-      spreadsheetId: process.env.GOOGLE_SHEETS_ID,
-      range: "Ventas!A2:J",
-      valueInputOption: "RAW",
-      resource: {
-        values: ventaData,
-      },
-    });
-
+    // Disminuir stock de productos (ahora permite stock negativo)
     for (const prod of productos) {
       const amount = parseInt(prod.cantidad);
       if (amount > 0) {
-        await decreaseStock(auth, prod.id, amount);
+        try {
+          await decreaseStock(prod.id, amount);
+        } catch (error) {
+          console.warn(
+            `Warning: Could not decrease stock for product ${prod.id}: ${error.message}`
+          );
+          // Continuar con la venta incluso si hay problemas con el stock
+        }
       }
     }
 
-    return { message: "Venta registrada exitosamente", data: res.data };
+    return {
+      message: "Venta registrada exitosamente",
+      sales: sales.map((sale) => ({
+        id: sale.id,
+        productName: sale.product.name,
+        clientName: sale.client.name,
+        quantity: sale.quantity,
+        total: sale.total,
+        payment: sale.payment,
+        status: sale.orderStatus,
+        date: sale.date,
+        time: sale.time,
+      })),
+    };
   } catch (error) {
     console.error("Error registrando la venta:", error);
     throw new Error(`Error registrando la venta: ${error.message}`);
   }
 }
 
-async function getSaleDataUnitiInfo(auth, id) {
+async function getSaleDataUnitiInfo(id) {
   try {
-    const sheets = google.sheets({ version: "v4", auth });
-
-    // Obtener ventas
-    const res = await sheets.spreadsheets.values.get({
-      spreadsheetId: process.env.GOOGLE_SHEETS_ID,
-      range: "Ventas!A2:J", // Rango de la hoja de ventas
+    const sales = await prisma.sale.findMany({
+      where: {
+        userId: id,
+        orderStatus: {
+          not: "Anulado",
+        },
+      },
+      include: {
+        product: {
+          select: {
+            id: true,
+            name: true,
+            price: true,
+          },
+        },
+        client: {
+          select: {
+            id: true,
+            name: true,
+            phone: true,
+          },
+        },
+      },
     });
-    const rows = res.data.values || [];
 
-    // Obtener usuarios
-    const users = await getClients(auth);
+    if (sales.length === 0) {
+      throw new Error("Ventas no encontradas");
+    }
 
-    // Obtener productos
-    const { products } = await getSheetData(auth);
-
-    // Filtrar y mapear ventas que coinciden con el ID del cliente
-    const sales = rows
-      .filter((row) => row[0] === id.toString()) // Filtrar por el ID del cliente
-      .map((row) => {
-        const clienteId = row[2]; // ID del cliente
-        const user = users.find((user) => user.id === clienteId);
-        const clienteNombre = user ? user.nombre : "Desconocido"; // Nombre del cliente
-        const clienteCelular = user ? user.celular : ""; // Nombre del cliente
-
-        // Buscar información del producto correspondiente
-        const productId = row[1]; // ID del producto
-        const product = products.find((prod) => prod.id === productId);
-        const productName = product ? product.nombre : "Producto desconocido";
-        const productPrice = product ? parseFloat(product.precio) : 0;
-
-        // Inicializamos el objeto de la venta
-        let saleData = {
-          id: row[0],
-          idProducto: productId,
-          productoNombre: productName, // Nombre del producto
-          productoPrecio: productPrice, // Precio del producto
-          idCliente: clienteId,
-          cliente: clienteNombre,
-          celular: clienteCelular,
-          cantidad: parseInt(row[3]), // Cantidad comprada
-          subtotal: parseFloat(row[4]), // Subtotal de la venta
-          pago: row[5], // Método de pago
-          estadoPago: row[6], // Estado del pago
-          total: parseFloat(row[7]), // Total de la compra
-          fecha: row[8], // Fecha de la venta
-          hora: row[9], // Hora de la venta
-        };
-
-        return saleData;
-      });
-
-    return sales;
+    return sales.map((sale) => ({
+      id: sale.id,
+      idProducto: sale.productId,
+      productoNombre: sale.product.name,
+      productoPrecio: sale.product.price,
+      idCliente: sale.clientId,
+      cliente: sale.client.name,
+      celular: sale.client.phone || "",
+      cantidad: sale.quantity,
+      subtotal: sale.subtotal,
+      pago: sale.payment,
+      estadoPago: sale.orderStatus,
+      total: sale.total,
+      fecha: sale.date.toLocaleDateString("es-AR"),
+      hora: sale.time,
+    }));
   } catch (error) {
     console.log({ error: error.message });
     throw error;
   }
 }
 
-async function getSaleData(auth) {
+async function getSaleById(id) {
   try {
-    const sheets = google.sheets({ version: "v4", auth });
-
-    // Obtener las ventas
-    const res = await sheets.spreadsheets.values.get({
-      spreadsheetId: process.env.GOOGLE_SHEETS_ID,
-      range: "Ventas!A2:J",
-    });
-    const rows = res.data.values || [];
-
-    // Obtener los usuarios
-    const clientes = await getClients(auth); // Usamos la función getUser para obtener los usuarios
-
-    const salesData = rows.map((row) => {
-      const clienteId = row[2]; // Asumiendo que el ID del cliente está en la columna 3 (índice 2)
-      const cliente = clientes.find((user) => user.id === clienteId); // Buscar el usuario por uid
-      const clienteNombre = cliente ? cliente.nombre : "Desconocido"; // Si no encuentra el nombre, poner "Desconocido"
-      const clienteCelular = cliente ? cliente.celular : ""; // Si no encuentra el nombre, poner "Desconocido"
-
-      return {
-        id: row[0],
-        idProducto: row[1],
-        idCliente: row[2],
-        cliente: clienteNombre,
-        celular: clienteCelular || "",
-        cantidad: parseInt(row[3]),
-        subtotal: parseFloat(row[4]),
-        pago: row[5],
-        estadoPago: row[6],
-        total: parseFloat(row[7]),
-        fecha: row[8],
-        hora: row[9],
-      };
+    const sales = await prisma.sale.findMany({
+      where: {
+        id: id,
+        orderStatus: {
+          not: "Anulado",
+        },
+      },
+      include: {
+        product: {
+          select: {
+            id: true,
+            name: true,
+            price: true,
+          },
+        },
+        client: {
+          select: {
+            id: true,
+            name: true,
+            phone: true,
+          },
+        },
+      },
     });
 
-    return { salesData, lastId: rows.length };
+    if (sales.length === 0) {
+      throw new Error("Ventas no encontradas");
+    }
+
+    return sales.map((sale) => ({
+      id: sale.id,
+      idProducto: sale.productId,
+      productoNombre: sale.product.name,
+      productoPrecio: sale.product.price,
+      idCliente: sale.clientId,
+      cliente: sale.client.name,
+      celular: sale.client.phone || "",
+      cantidad: sale.quantity,
+      subtotal: sale.subtotal,
+      pago: sale.payment,
+      estadoPago: sale.orderStatus,
+      total: sale.total,
+      fecha: sale.date.toLocaleDateString("es-AR"),
+      hora: sale.time,
+    }));
+  } catch (error) {
+    console.log({ error: error.message });
+    throw error;
+  }
+}
+
+async function getSaleData() {
+  try {
+    const sales = await prisma.sale.findMany({
+      where: {
+        orderStatus: {
+          not: "Anulado",
+        },
+      },
+      include: {
+        product: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        client: {
+          select: {
+            id: true,
+            name: true,
+            phone: true,
+          },
+        },
+        user: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    const salesData = sales.map((sale) => ({
+      id: sale.id,
+      idProducto: sale.productId,
+      idCliente: sale.clientId,
+      cliente: sale.client.name,
+      celular: sale.client.phone || "",
+      cantidad: sale.quantity,
+      subtotal: sale.subtotal,
+      pago: sale.payment,
+      estadoPago: sale.orderStatus,
+      total: sale.total,
+      fecha: sale.date.toLocaleDateString("es-AR"),
+      hora: sale.time,
+      userId: sale.userId,
+    }));
+
+    console.log(salesData);
+    return { salesData };
   } catch (error) {
     console.log({ error: error.message });
     throw new Error("Error retrieving sales data");
   }
 }
 
-// Obtener las ventas semanales de un cliente específico
-async function getWeeklyAllSalesByClient(auth, clientId) {
+async function getWeeklyAllSalesByClient(clientId) {
   try {
-    const sheets = google.sheets({ version: "v4", auth });
-
-    // Obtener los datos de ventas desde la hoja de "Ventas"
-    const salesRes = await sheets.spreadsheets.values.get({
-      spreadsheetId: process.env.GOOGLE_SHEETS_ID,
-      range: "Ventas!A2:K", // Ajusta el rango según tus necesidades
+    const sales = await prisma.sale.findMany({
+      where: {
+        clientId: clientId,
+        orderStatus: {
+          not: "Anulado",
+        },
+      },
+      include: {
+        client: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+      orderBy: {
+        date: "desc",
+      },
     });
-    const salesRows = salesRes.data.values || [];
 
-    if (salesRows.length === 0) {
-      return []; // No hay ventas
+    if (sales.length === 0) {
+      return [];
     }
 
-    // Filtrar las ventas para el cliente específico
-    const salesForClient = salesRows.filter((row) => row[2] === clientId);
-
     // Agrupar las ventas por semanas
-    const weeklySales = salesForClient.reduce((acc, row) => {
-      const saleDate = moment(row[8], "DD/MM/YYYY");
-      const totalSale = parseFloat(row[7]);
-
-      const week = saleDate.isoWeek(); // Obtener el número de semana del año
+    const weeklySales = sales.reduce((acc, sale) => {
+      const saleDate = moment(sale.date);
+      const totalSale = sale.total;
+      const week = saleDate.isoWeek();
 
       if (!acc[week]) {
         acc[week] = {
-          weekStart: saleDate.startOf('isoWeek').format('YYYY-MM-DD'),
-          weekEnd: saleDate.endOf('isoWeek').format('YYYY-MM-DD'),
+          weekStart: saleDate.startOf("isoWeek").format("YYYY-MM-DD"),
+          weekEnd: saleDate.endOf("isoWeek").format("YYYY-MM-DD"),
           totalSales: 0,
-          sales: []
+          sales: [],
         };
       }
-      
+
       acc[week].totalSales += totalSale;
       acc[week].sales.push({
-        saleDate: saleDate.format('YYYY-MM-DD'),
+        saleDate: saleDate.format("YYYY-MM-DD"),
         amount: totalSale,
       });
 
       return acc;
     }, {});
 
-    // Transformar el objeto en un array para la respuesta
     const weeklySalesArray = Object.keys(weeklySales).map((week) => ({
       week: week,
       ...weeklySales[week],
@@ -258,257 +299,690 @@ async function getWeeklyAllSalesByClient(auth, clientId) {
   }
 }
 
-
-async function getWeeklySalesByClient(auth) {
+async function getWeeklySalesByClient() {
   try {
-    const sheets = google.sheets({ version: "v4", auth });
-
-    // Obtener los datos de las ventas desde la hoja "Ventas"
-    const salesRes = await sheets.spreadsheets.values.get({
-      spreadsheetId: process.env.GOOGLE_SHEETS_ID,
-      range: "Ventas!A2:J", // Ajusta el rango si es necesario
-    });
-    const salesRows = salesRes.data.values || [];
-
-    if (salesRows.length === 0) {
-      return []; // No hay ventas
-    }
-
-    // Función para convertir fecha en formato "dd/mm/yyyy" a un objeto Date
-    function parseDate(dateString) {
-      const [day, month, year] = dateString.split("/");
-      return new Date(`${year}-${month}-${day}`);
-    }
-
-    // Obtener la fecha actual
     const today = new Date();
-    const currentDayOfWeek = today.getDay(); // 0 = domingo, 1 = lunes, ..., 6 = sábado
-    const diffToMonday = (currentDayOfWeek + 6) % 7; // Obtener cuántos días retroceder para llegar al lunes
+    const currentDayOfWeek = today.getDay();
+    const diffToMonday = (currentDayOfWeek + 6) % 7;
     const currentStartDate = new Date(today);
     currentStartDate.setDate(today.getDate() - diffToMonday);
-    currentStartDate.setHours(0, 0, 0, 0); // Establecer a la medianoche para mayor precisión
+    currentStartDate.setHours(0, 0, 0, 0);
 
     const currentEndDate = new Date(currentStartDate);
-    currentEndDate.setDate(currentStartDate.getDate() + 6); // Intervalo de lunes a domingo
+    currentEndDate.setDate(currentStartDate.getDate() + 6);
+    currentEndDate.setHours(23, 59, 59, 999);
 
-    // Crear un objeto para almacenar el total de ventas por cliente y por semana
+    // Obtener todas las ventas de la semana actual
+    const sales = await prisma.sale.findMany({
+      where: {
+        date: {
+          gte: currentStartDate,
+          lte: currentEndDate,
+        },
+        orderStatus: {
+          not: "Anulado",
+        },
+      },
+      include: {
+        client: {
+          select: {
+            id: true,
+            name: true,
+            phone: true,
+          },
+        },
+        product: {
+          select: {
+            id: true,
+            name: true,
+            price: true,
+          },
+        },
+      },
+      orderBy: {
+        date: "desc",
+      },
+    });
+
+    if (sales.length === 0) {
+      return {
+        weekInfo: {
+          weekStart: currentStartDate.toISOString().split("T")[0],
+          weekEnd: currentEndDate.toISOString().split("T")[0],
+          weekNumber: Math.ceil(
+            (currentStartDate.getTime() -
+              new Date(currentStartDate.getFullYear(), 0, 1).getTime()) /
+              (7 * 24 * 60 * 60 * 1000)
+          ),
+        },
+        totalSales: 0,
+        totalAmount: 0,
+        clients: [],
+        message: "No se encontraron ventas en esta semana",
+      };
+    }
+
+    // Agrupar ventas por cliente
     const weeklySalesByClient = {};
 
-    // Iterar sobre las ventas para agrupar y sumar los totales en la semana actual
-    for (const row of salesRows) {
-      const saleDate = parseDate(row[8]); // Fecha de la venta
-      const totalSale = parseFloat(row[7]); // Total de la venta
-      const clientId = row[2];
-
-      // Verificar si la fecha de la venta está dentro de la semana en curso
-      if (saleDate >= currentStartDate && saleDate <= currentEndDate) {
-        if (!weeklySalesByClient[clientId]) {
-          weeklySalesByClient[clientId] = 0;
-        }
-        weeklySalesByClient[clientId] += totalSale;
+    sales.forEach((sale) => {
+      const clientId = sale.clientId;
+      if (!weeklySalesByClient[clientId]) {
+        weeklySalesByClient[clientId] = {
+          clientId: sale.client.id,
+          clientName: sale.client.name,
+          clientPhone: sale.client.phone || "",
+          weekStart: currentStartDate.toISOString().split("T")[0],
+          weekEnd: currentEndDate.toISOString().split("T")[0],
+          totalSales: 0,
+          totalAmount: 0,
+          salesCount: 0,
+          averageSale: 0,
+          products: [],
+          lastSaleDate: null,
+          paymentMethods: new Set(),
+        };
       }
-    }
 
-    // Crear una lista para almacenar los resultados
-    const weeklySalesData = [];
+      weeklySalesByClient[clientId].totalSales += sale.total;
+      weeklySalesByClient[clientId].salesCount += 1;
+      weeklySalesByClient[clientId].paymentMethods.add(sale.payment);
 
-    // Guardar los totales de la semana actual
-    for (const clientId in weeklySalesByClient) {
-      const clientData = await getClientById(auth, clientId); // Obtener datos del cliente
-      weeklySalesData.push({
-        ...clientData, // Añadir los datos del cliente
-        weekStart: currentStartDate.toISOString().split("T")[0], // Inicio de la semana
-        weekEnd: currentEndDate.toISOString().split("T")[0], // Fin de la semana
-        totalSales: weeklySalesByClient[clientId],
+      // Agregar información del producto
+      weeklySalesByClient[clientId].products.push({
+        productId: sale.product.id,
+        productName: sale.product.name,
+        quantity: sale.quantity,
+        price: sale.product.price,
+        subtotal: sale.subtotal,
+        saleDate: sale.date.toISOString().split("T")[0],
+        saleTime: sale.time,
       });
-    }
 
-    return weeklySalesData;
+      // Actualizar fecha de última venta
+      if (
+        !weeklySalesByClient[clientId].lastSaleDate ||
+        sale.date > new Date(weeklySalesByClient[clientId].lastSaleDate)
+      ) {
+        weeklySalesByClient[clientId].lastSaleDate = sale.date
+          .toISOString()
+          .split("T")[0];
+      }
+    });
+
+    // Calcular promedios y convertir Sets a Arrays
+    const clientsData = Object.values(weeklySalesByClient).map((client) => ({
+      ...client,
+      averageSale: client.totalSales / client.salesCount,
+      paymentMethods: Array.from(client.paymentMethods),
+      totalAmount: client.totalSales, // Para mantener compatibilidad
+    }));
+
+    // Calcular totales generales
+    const totalAmount = clientsData.reduce(
+      (sum, client) => sum + client.totalSales,
+      0
+    );
+    const totalSales = clientsData.reduce(
+      (sum, client) => sum + client.salesCount,
+      0
+    );
+
+    return {
+      weekInfo: {
+        weekStart: currentStartDate.toISOString().split("T")[0],
+        weekEnd: currentEndDate.toISOString().split("T")[0],
+        weekNumber: Math.ceil(
+          (currentStartDate.getTime() -
+            new Date(currentStartDate.getFullYear(), 0, 1).getTime()) /
+            (7 * 24 * 60 * 60 * 1000)
+        ),
+        totalDays: 7,
+      },
+      totalSales: totalSales,
+      totalAmount: totalAmount,
+      averageSale: totalSales > 0 ? totalAmount / totalSales : 0,
+      clientsCount: clientsData.length,
+      clients: clientsData.sort((a, b) => b.totalSales - a.totalSales), // Ordenar por total de ventas descendente
+    };
   } catch (error) {
     console.error({ error: error.message });
     throw new Error("Error retrieving weekly sales data");
   }
 }
 
-
-async function putSaleChangeState(auth, id, state) {
-  const sheets = google.sheets({ version: "v4", auth });
-
-  // Obtener todos los datos de la hoja
-  const { salesData } = await getSaleData(auth);
-
-  // Buscar la fila que coincida con el ID proporcionado
-  const saleRow = salesData.find((sale) => sale.id === id);
-
-  if (!saleRow) {
-    throw new Error("ID no encontrado");
-  }
-
-  // Corregir el valor de 'state' si es necesario
-  const correctedState = state === "Enproceso" ? "En proceso" : state;
-
-  // Obtener el índice de la fila en la que está la venta (considerando que salesData es un array de filas)
-  const rowIndex = salesData.indexOf(saleRow);
-
-  // Usamos el índice de la fila para actualizar solo la columna del estado de pago
-  await sheets.spreadsheets.values.update({
-    spreadsheetId: process.env.GOOGLE_SHEETS_ID,
-    range: `Ventas!G${rowIndex + 2}`, // Suponiendo que "Estado Pedido" está en la columna G (índice 6)
-    valueInputOption: "RAW",
-    resource: {
-      values: [[correctedState]],
-    },
-  });
-
-  console.log(
-    `Estado de la venta con ID ${id} actualizado a "${correctedState}"`
-  );
-}
-
-async function getSalesByDate(auth, date) {
+async function getWeeklySalesByUser(uid) {
   try {
-    const sheets = google.sheets({ version: "v4", auth });
-    const res = await sheets.spreadsheets.values.get({
-      spreadsheetId: process.env.GOOGLE_SHEETS_ID,
-      range: "Ventas!A2:J", // Ajusta el rango según tu hoja de ventas
+    const today = new Date();
+    const currentDayOfWeek = today.getDay();
+    const diffToMonday = (currentDayOfWeek + 6) % 7;
+    const currentStartDate = new Date(today);
+    currentStartDate.setDate(today.getDate() - diffToMonday);
+    currentStartDate.setHours(0, 0, 0, 0);
+
+    const currentEndDate = new Date(currentStartDate);
+    currentEndDate.setDate(currentStartDate.getDate() + 6);
+
+    const sales = await prisma.sale.findMany({
+      where: {
+        userId: uid,
+        date: {
+          gte: currentStartDate,
+          lte: currentEndDate,
+        },
+        orderStatus: {
+          not: "Anulado",
+        },
+      },
+      include: {
+        client: {
+          select: {
+            id: true,
+            name: true,
+            phone: true,
+          },
+        },
+      },
     });
 
-    const rows = res.data.values || [];
+    // Agrupar ventas por cliente
+    const weeklySalesByClient = {};
 
-    // Filtrar las ventas que coinciden con la fecha
-    const salesForDate = rows
-      .filter((row) => row[10] === date)
-      .map((row) => row[0]);
+    sales.forEach((sale) => {
+      const clientId = sale.clientId;
+      if (!weeklySalesByClient[clientId]) {
+        weeklySalesByClient[clientId] = {
+          ...sale.client,
+          weekStart: currentStartDate.toISOString().split("T")[0],
+          weekEnd: currentEndDate.toISOString().split("T")[0],
+          totalSales: 0,
+        };
+      }
+      weeklySalesByClient[clientId].totalSales += sale.total;
+    });
 
-    return salesForDate;
+    return Object.values(weeklySalesByClient);
+  } catch (error) {
+    console.error({ error: error.message });
+    throw new Error("Error retrieving weekly sales data");
+  }
+}
+
+async function increaseStock(productId, amount) {
+  try {
+    const product = await prisma.product.findUnique({
+      where: { id: productId },
+    });
+
+    if (!product) {
+      throw new Error("ID no encontrado");
+    }
+
+    const updatedProduct = await prisma.product.update({
+      where: { id: productId },
+      data: {
+        stock: product.stock + parseInt(amount),
+      },
+    });
+
+    return {
+      message: "Stock increased successfully",
+      product: {
+        id: updatedProduct.id,
+        nombre: updatedProduct.name,
+        stock: updatedProduct.stock,
+      },
+    };
+  } catch (error) {
+    console.log({ error: error.message });
+    throw new Error(error.message);
+  }
+}
+
+async function deleteSalesById(id) {
+  try {
+    const sale = await prisma.sale.update({
+      where: { id },
+      data: {
+        orderStatus: "Anulado",
+      },
+    });
+
+    return {
+      message: "Sale cancelled successfully",
+      sale: {
+        id: sale.id,
+        status: sale.orderStatus,
+      },
+    };
+  } catch (error) {
+    console.log({ error: error.message });
+    throw new Error(error.message);
+  }
+}
+
+async function getCashFlow(date = null) {
+  try {
+    const cashFlowEntries = await prisma.cashFlow.findMany({
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    // Obtener ventas para incluir como ingresos
+    const sales = await prisma.sale.findMany({
+      where: {
+        orderStatus: {
+          not: "Anulado",
+        },
+      },
+      include: {
+        product: {
+          select: {
+            name: true,
+          },
+        },
+        client: {
+          select: {
+            name: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    // Procesar entradas de flujo de caja
+    const cashFlowData = [];
+    const cajaInicialData = [];
+    let cajaInicialMañana = 0;
+    let cajaInicialTarde = 0;
+    let saldoAcumulado = 0;
+
+    cashFlowEntries.forEach((entry) => {
+      if (entry.type.toLowerCase() === "caja inicial") {
+        cajaInicialData.push({
+          id: entry.id,
+          tipo: entry.type,
+          monto: entry.amount,
+          descripcion: entry.description,
+          fecha: entry.date.toLocaleDateString("es-AR"),
+          hora: entry.time,
+          periodo: entry.period,
+          cajaInicial: entry.initialCash,
+          cajaFinal: entry.finalCash,
+        });
+
+        if (entry.period?.toLowerCase() === "mañana") {
+          cajaInicialMañana = entry.amount;
+        } else if (entry.period?.toLowerCase() === "tarde") {
+          cajaInicialTarde = entry.amount;
+        }
+      } else {
+        if (entry.type.toLowerCase() === "ingreso") {
+          saldoAcumulado += entry.amount;
+        } else if (entry.type.toLowerCase() === "gasto") {
+          saldoAcumulado -= entry.amount;
+        }
+
+        cashFlowData.push({
+          id: entry.id,
+          tipo: entry.type,
+          monto: entry.amount,
+          descripcion: entry.description,
+          fecha: entry.date.toLocaleDateString("es-AR"),
+          hora: entry.time,
+          periodo: entry.period,
+          cajaInicial: entry.initialCash,
+          cajaFinal: entry.finalCash,
+        });
+      }
+    });
+
+    // Procesar ventas como ingresos
+    const ventasData = sales.map((sale) => {
+      saldoAcumulado += sale.total;
+
+      return {
+        id: `venta-${sale.id}`,
+        tipo: "Ingreso",
+        monto: sale.total,
+        descripcion: `Venta Producto: ${sale.product.name}, Cliente: ${sale.client.name}`,
+        fecha: sale.date.toLocaleDateString("es-AR"),
+        hora: sale.time,
+        periodo: "",
+        cajaInicial: saldoAcumulado - sale.total,
+        cajaFinal: saldoAcumulado,
+      };
+    });
+
+    const allCashFlowData = [
+      ...cashFlowData,
+      ...ventasData,
+      ...cajaInicialData,
+    ];
+    const cajaInicialDiaSiguiente =
+      cajaInicialTarde > 0 ? cajaInicialTarde : cajaInicialMañana;
+
+    return {
+      cashFlowData: allCashFlowData,
+      lastId: cashFlowEntries.length + sales.length,
+      cajaInicialMañana,
+      cajaInicialTarde,
+      cajaInicialDiaSiguiente,
+    };
+  } catch (error) {
+    console.error("Error al obtener el flujo de caja:", error.message);
+    throw new Error("Error al obtener el flujo de caja");
+  }
+}
+
+async function addCashFlowEntry(data) {
+  try {
+    const { tipo, monto, descripcion, fecha, periodo } = data;
+    const hora = new Date().toLocaleTimeString("es-AR", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
+
+    // Obtener el último saldo acumulado
+    const lastEntry = await prisma.cashFlow.findFirst({
+      orderBy: {
+        createdAt: "desc",
+      },
+    });
+
+    let saldoAcumulado = lastEntry ? lastEntry.finalCash : 0;
+    let cajaInicial = 0;
+
+    if (tipo === "Caja Inicial") {
+      cajaInicial = parseFloat(monto);
+      saldoAcumulado = cajaInicial;
+    } else {
+      saldoAcumulado =
+        tipo === "Ingreso"
+          ? saldoAcumulado + parseFloat(monto)
+          : saldoAcumulado - parseFloat(monto);
+    }
+
+    const newEntry = await prisma.cashFlow.create({
+      data: {
+        type: tipo,
+        amount: parseFloat(monto),
+        description: descripcion,
+        date: fecha ? new Date(fecha) : new Date(),
+        time: hora,
+        period: periodo,
+        initialCash: cajaInicial,
+        finalCash: saldoAcumulado,
+      },
+    });
+
+    return {
+      id: newEntry.id,
+      tipo: newEntry.type,
+      monto: newEntry.amount,
+      descripcion: newEntry.description,
+      fecha: newEntry.date.toLocaleDateString("es-AR"),
+      hora: newEntry.time,
+      periodo: newEntry.period,
+      cajaInicial: newEntry.initialCash,
+      cajaFinal: newEntry.finalCash,
+    };
+  } catch (error) {
+    console.error("Error adding cash flow entry:", error);
+    throw new Error("Error adding cash flow entry");
+  }
+}
+
+async function appendRowPayment(rowData) {
+  try {
+    const payment = await prisma.payment.create({
+      data: {
+        ...rowData,
+      },
+    });
+
+    return {
+      message: "Payment created successfully",
+      payment,
+    };
+  } catch (error) {
+    console.error("Error creating payment:", error);
+    throw new Error("Error creating payment");
+  }
+}
+
+// Función auxiliar para disminuir stock (importada del controlador de productos)
+async function decreaseStock(productId, amount) {
+  try {
+    const product = await prisma.product.findUnique({
+      where: { id: productId },
+    });
+
+    if (!product) {
+      throw new Error("ID no encontrado");
+    }
+
+    const newStock = product.stock - parseInt(amount);
+
+    // Permitir stock negativo (ventas sin stock)
+    // if (newStock < 0) {
+    //   throw new Error("Stock insuficiente");
+    // }
+
+    const updatedProduct = await prisma.product.update({
+      where: { id: productId },
+      data: {
+        stock: newStock,
+      },
+    });
+
+    return {
+      message: "Stock decreased successfully",
+      product: {
+        id: updatedProduct.id,
+        nombre: updatedProduct.name,
+        stock: updatedProduct.stock,
+      },
+    };
+  } catch (error) {
+    console.log({ error: error.message });
+    throw new Error(error.message);
+  }
+}
+
+async function putSaleChangeState(id, state) {
+  try {
+    const correctedState = state === "Enproceso" ? "En proceso" : state;
+
+    const sale = await prisma.sale.update({
+      where: { id },
+      data: {
+        orderStatus: correctedState,
+      },
+    });
+
+    console.log(
+      `Estado de la venta con ID ${id} actualizado a "${correctedState}"`
+    );
+
+    return {
+      message: `Sale status updated to ${correctedState}`,
+      sale: {
+        id: sale.id,
+        status: sale.orderStatus,
+      },
+    };
+  } catch (error) {
+    console.error("Error updating sale status:", error);
+    throw new Error("Error updating sale status");
+  }
+}
+
+async function getSalesByDate(date) {
+  try {
+    const startDate = new Date(date);
+    startDate.setHours(0, 0, 0, 0);
+
+    const endDate = new Date(date);
+    endDate.setHours(23, 59, 59, 999);
+
+    const sales = await prisma.sale.findMany({
+      where: {
+        date: {
+          gte: startDate,
+          lte: endDate,
+        },
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    return sales.map((sale) => sale.id);
   } catch (error) {
     console.error("Error obteniendo ventas por fecha:", error);
     throw new Error("Error obteniendo ventas por fecha");
   }
 }
 
-async function getSaleByClientId(auth, id) {
+async function getSaleByClientId(id) {
   try {
-    const sheets = google.sheets({ version: "v4", auth });
-    const res = await sheets.spreadsheets.values.get({
-      spreadsheetId: process.env.GOOGLE_SHEETS_ID,
-      range: "Ventas!A2:J", // Ajusta el rango según tu hoja de ventas
+    const sales = await prisma.sale.findMany({
+      where: {
+        clientId: id,
+        orderStatus: {
+          not: "Anulado",
+        },
+      },
+      include: {
+        product: {
+          select: {
+            id: true,
+            name: true,
+            price: true,
+          },
+        },
+        client: {
+          select: {
+            id: true,
+            name: true,
+            phone: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
     });
 
-    const rows = res.data.values || [];
-
-    // Filtrar las ventas que coinciden con el id en la columna "cliente"
-    const salesForUser = rows.filter((row) => row[2] === id);
-
-    if (salesForUser.length === 0) {
-      return { message: "No sales found for this user" };
+    if (sales.length === 0) {
+      return { message: "No sales found for this client" };
     }
 
-    // Obtener la información del cliente solo una vez
-    const client = await getClientById(auth, id);
-
-    // Inicializar arrays para almacenar productos, cantidades, fechas y horas
+    const client = sales[0].client;
     const products = [];
     const quantities = [];
-    const paymentMethods = new Set(); // Para asegurarnos de que el método de pago sea único
-    const dates = []; // Array para almacenar fechas de cada venta
-    const times = []; // Array para almacenar horas de cada venta
+    const paymentMethods = new Set();
+    const dates = [];
+    const times = [];
     let totalPrice = 0;
     let status = "";
 
-    // Recorrer todas las ventas del cliente
-    for (const row of salesForUser) {
-      const product = await getSheetDataById(Number(row[1]), auth); // Obtener info del producto
+    sales.forEach((sale) => {
+      products.push({
+        id: sale.product.id,
+        nombre: sale.product.name,
+        precio: sale.product.price,
+      });
+      quantities.push(sale.quantity);
+      paymentMethods.add(sale.payment);
+      status = sale.orderStatus;
+      totalPrice += sale.total;
+      dates.push(sale.date.toLocaleDateString("es-AR"));
+      times.push(sale.time);
+    });
 
-      // Añadir información a los arrays
-      products.push(product);
-      quantities.push(row[3]);
-
-      // Asignar otros datos solo una vez (suponiendo que son iguales en todas las ventas)
-      paymentMethods.add(row[5]);
-      status = row[6];
-      totalPrice += parseFloat(row[7]); // Sumar al total el precio
-
-      // Agregar la fecha y hora de cada venta
-      dates.push(row[8]); // Almacenar cada fecha
-      times.push(row[9]); // Almacenar cada hora
-    }
-
-    // Devolver la información estructurada
     return {
       client: {
-        nombre: client.nombre,
-        celular: client.celular,
+        nombre: client.name,
+        celular: client.phone || "",
       },
       products,
       quantities,
-      paymentMethods: [...paymentMethods], // Convertir Set a array
+      paymentMethods: [...paymentMethods],
       status,
       totalPrice,
-      dates, // Devolver array con fechas de cada venta
-      times, // Devolver array con horas de cada venta
+      dates,
+      times,
     };
   } catch (error) {
-    console.error("Error obteniendo ventas por UID:", error);
-    throw new Error("Error obteniendo ventas por UID");
+    console.error("Error obteniendo ventas por cliente:", error);
+    throw new Error("Error obteniendo ventas por cliente");
   }
 }
 
-async function preloadData(auth) {
-  const { products } = await getSheetData(auth); // Obtener solo los productos del resultado
-  const clients = await getClients(auth); // Obtener todos los clientes
-  return { products, clients };
-}
-
-function findClientById(clients, clientId) {
-  return clients.find((client) => client.id === clientId) || null;
-}
-
-function findProductById(products, productId) {
-  if (!Array.isArray(products)) {
-    console.error("Error: products no es un array");
-    return null;
-  }
-  return products.find((product) => product.id === productId) || null;
-}
-
-async function getSaleByUserId(auth, uid) {
+async function getSaleByUserId(uid) {
   try {
-    const sheets = google.sheets({ version: "v4", auth });
-    const res = await sheets.spreadsheets.values.get({
-      spreadsheetId: process.env.GOOGLE_SHEETS_ID,
-      range: "Ventas!A2:K",
+    const sales = await prisma.sale.findMany({
+      where: {
+        userId: uid,
+        orderStatus: {
+          not: "Anulado",
+        },
+      },
+      include: {
+        product: {
+          select: {
+            id: true,
+            name: true,
+            price: true,
+          },
+        },
+        client: {
+          select: {
+            id: true,
+            name: true,
+            phone: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
     });
 
-    const rows = res.data.values || [];
-
-    // Filtrar las ventas que coinciden con el UID del usuario
-    const salesForUser = rows.filter((row) => row[10]?.trim() === uid.trim());
-
-    if (!salesForUser.length) {
+    if (sales.length === 0) {
       console.log(`No se encontraron ventas para el UID: ${uid}`);
       return [];
     }
 
-    // Pre-cargar productos y clientes
-    const { products, clients } = await preloadData(auth);
-
     // Crear un objeto para acumular las ventas por ID de venta
     const salesSummary = {};
 
-    // Procesar cada venta sin llamadas asíncronas
-    salesForUser.forEach((row) => {
+    sales.forEach((sale) => {
       try {
-        const saleId = row[0];
-        const productId = row[1];
-        const client = findClientById(clients, row[2]); // Buscar cliente en la pre-carga
-        const quantity = Number(row[3]) || 0;
-        const total = isNaN(Number(row[7])) ? 0 : Number(row[7]);
-        const paymentMethod = row[5];
-        const estadoPago = row[6];
-        const fecha = row[8];
-        const hora = row[9];
-        const product = findProductById(products, productId); // Buscar producto en la pre-carga
+        const saleId = sale.id;
+        const productId = sale.productId;
+        const client = {
+          id: sale.client.id,
+          nombre: sale.client.name,
+          celular: sale.client.phone || "",
+        };
+        const quantity = sale.quantity;
+        const total = sale.total;
+        const paymentMethod = sale.payment;
+        const estadoPago = sale.orderStatus;
+        const fecha = sale.date.toLocaleDateString("es-AR");
+        const hora = sale.time;
+        const product = {
+          id: sale.product.id,
+          nombre: sale.product.name,
+          precio: sale.product.price,
+        };
 
         if (salesSummary[saleId]) {
           salesSummary[saleId].products.push({
@@ -540,487 +1014,18 @@ async function getSaleByUserId(auth, uid) {
           };
         }
       } catch (error) {
-        console.error(`Error procesando venta: ${row[0]}`, error);
+        console.error(`Error procesando venta: ${sale.id}`, error);
       }
     });
 
-    // Convertir el objeto salesSummary en un array
-    const salesData = Object.values(salesSummary);
-
-    return salesData;
+    return Object.values(salesSummary);
   } catch (error) {
     console.error("Error obteniendo ventas por UID:", error);
     throw new Error("Error obteniendo ventas por UID");
   }
 }
 
-async function getWeeklySalesByUser(auth, uid) {
-  try {
-    const sheets = google.sheets({ version: "v4", auth });
-
-    // Obtener los datos de las ventas desde la hoja "Ventas"
-    const salesRes = await sheets.spreadsheets.values.get({
-      spreadsheetId: process.env.GOOGLE_SHEETS_ID,
-      range: "Ventas!A2:K", // Ajusta el rango si es necesario
-    });
-    const salesRows = salesRes.data.values || [];
-
-    if (salesRows.length === 0) {
-      return []; // No hay ventas
-    }
-
-    // Filtrar las ventas del usuario específico
-    const salesForUser = salesRows.filter((row) => row[10] === uid);
-
-    // Función para convertir fecha en formato "dd/mm/yyyy" a objeto Date
-    function parseDate(dateString) {
-      const [day, month, year] = dateString.split("/");
-      return new Date(`${year}-${month}-${day}`);
-    }
-
-    // Obtener la fecha actual
-    const today = new Date();
-    const currentDayOfWeek = today.getDay(); // 0 = domingo, 1 = lunes, ..., 6 = sábado
-    const diffToMonday = (currentDayOfWeek + 6) % 7; // Obtener cuántos días retroceder para llegar al lunes
-    const currentStartDate = new Date(today);
-    currentStartDate.setDate(today.getDate() - diffToMonday);
-    currentStartDate.setHours(0, 0, 0, 0); // Establecer a la medianoche
-
-    const currentEndDate = new Date(currentStartDate);
-    currentEndDate.setDate(currentStartDate.getDate() + 6); // Intervalo de lunes a domingo
-
-    // Agrupar las ventas por cliente y semana
-    const weeklySalesByClient = {};
-
-    for (const row of salesForUser) {
-      const saleDate = parseDate(row[8]);
-      const totalSale = parseFloat(row[7]);
-      const clientId = row[2];
-
-      // Verificar si la venta está dentro de la semana actual
-      if (saleDate >= currentStartDate && saleDate <= currentEndDate) {
-        if (!weeklySalesByClient[clientId]) {
-          weeklySalesByClient[clientId] = 0;
-        }
-        // Sumar la venta al total de la semana para el cliente
-        weeklySalesByClient[clientId] += totalSale;
-      }
-    }
-
-    // Crear la lista de resultados con los datos del cliente y las ventas por semana
-    const weeklySalesData = [];
-
-    for (const clientId in weeklySalesByClient) {
-      const clientData = await getClientById(auth, clientId); // Obtener los datos del cliente una vez por cliente
-
-      weeklySalesData.push({
-        ...clientData, // Añadir los datos del cliente
-        weekStart: currentStartDate.toISOString().split("T")[0], // Inicio de la semana
-        weekEnd: currentEndDate.toISOString().split("T")[0], // Fin de la semana
-        totalSales: weeklySalesByClient[clientId],
-      });
-    }
-
-    return weeklySalesData;
-  } catch (error) {
-    console.error({ error: error.message });
-    throw new Error("Error retrieving weekly sales data");
-  }
-}
-
-
-async function increaseStock(auth, productId, amount) {
-  const sheets = google.sheets({ version: "v4", auth });
-  const { products } = await getSheetData(auth);
-  const rowIndex = products.findIndex((row) => row.id === productId);
-  if (rowIndex === -1) {
-    throw new Error("ID no encontrado");
-  }
-  // Convertir cantidad a número y sumarle la cantidad a aumentar
-  const currentAmount = parseInt(products[rowIndex].cantidad) || 0;
-  products[rowIndex].cantidad = currentAmount + amount;
-
-  const res = await sheets.spreadsheets.values.update({
-    spreadsheetId: process.env.GOOGLE_SHEETS_ID,
-    range: `Productos!A${rowIndex + 2}:J${rowIndex + 2}`,
-    valueInputOption: "RAW",
-    resource: {
-      values: [Object.values(products[rowIndex])],
-    },
-  });
-  return res.data;
-}
-
-async function decreaseStock(auth, productId, amount) {
-  const sheets = google.sheets({ version: "v4", auth });
-
-  // Obtener los datos actuales de los productos
-  const { products } = await getSheetData(auth);
-
-  // Buscar la fila correspondiente al ID del producto
-  const rowIndex = products.findIndex((row) => row.id === productId);
-  if (rowIndex === -1) {
-    throw new Error("ID no encontrado");
-  }
-
-  // Obtener el stock actual y disminuirlo
-  const currentAmount = parseInt(products[rowIndex].stock) || 0;
-  const newStock = currentAmount - amount;
-
-  if (newStock < 0) {
-    throw new Error("Stock insuficiente");
-  }
-
-  // Actualizar solo la columna del stock
-  const res = await sheets.spreadsheets.values.update({
-    spreadsheetId: process.env.GOOGLE_SHEETS_ID,
-    range: `Productos!C${rowIndex + 2}`, // Asegúrate de que la columna de stock sea la columna C (ajusta si es diferente)
-    valueInputOption: "RAW",
-    resource: {
-      values: [[newStock]],
-    },
-  });
-
-  return res.data;
-}
-
-async function deleteSalesById(auth, id) {
-  const sheets = google.sheets({ version: "v4", auth });
-
-  // Obtener todos los datos de la hoja
-  const { salesData } = await getSaleData(auth);
-
-  // Filtrar todas las filas que coincidan con el ID proporcionado
-  const rowsToUpdate = salesData.filter((sale) => sale.id === id);
-
-  if (rowsToUpdate.length === 0) {
-    throw new Error("ID not found");
-  }
-
-  // Estado al que queremos cambiar
-  const canceledState = "Anulado";
-
-  // Obtener el ID de la hoja de cálculo
-  const sheetInfo = await sheets.spreadsheets.get({
-    spreadsheetId: process.env.GOOGLE_SHEETS_ID,
-  });
-
-  const sheet = sheetInfo.data.sheets.find(
-    (s) => s.properties.title === "Ventas" // Asegúrate de que este sea el nombre correcto de tu hoja
-  );
-
-  if (!sheet) {
-    throw new Error("Sheet not found");
-  }
-
-  const sheetId = sheet.properties.sheetId;
-
-  // Crear las solicitudes de actualización para todas las filas coincidentes
-  const requests = rowsToUpdate.map((sale) => {
-    const rowIndex = salesData.indexOf(sale);
-    return {
-      updateCells: {
-        range: {
-          sheetId: sheetId, // Usamos el sheetId obtenido
-          startRowIndex: rowIndex + 1, // +1 porque las filas en Google Sheets empiezan en 1
-          endRowIndex: rowIndex + 2,
-          startColumnIndex: 6, // Columna del estadoPago (columna J)
-          endColumnIndex: 9,
-        },
-        rows: [
-          {
-            values: [
-              {
-                userEnteredValue: {
-                  stringValue: canceledState,
-                },
-              },
-            ],
-          },
-        ],
-        fields: "userEnteredValue",
-      },
-    };
-  });
-
-  // Ejecutar la actualización
-  const res = await sheets.spreadsheets.batchUpdate({
-    spreadsheetId: process.env.GOOGLE_SHEETS_ID,
-    resource: {
-      requests,
-    },
-  });
-
-  return res.data;
-}
-
-async function getCashFlow(auth, date = null) {
-  try {
-    const sheets = google.sheets({ version: "v4", auth });
-    const cashFlowRange = "FlujoDeCaja!A2:I";
-
-    // 1. Obtener los datos del flujo de caja
-    const resCashFlow = await sheets.spreadsheets.values.get({
-      spreadsheetId: process.env.GOOGLE_SHEETS_ID,
-      range: cashFlowRange,
-    });
-
-    const rowsCashFlow = resCashFlow.data.values || [];
-    let lastId =
-      rowsCashFlow.length > 0
-        ? parseInt(rowsCashFlow[rowsCashFlow.length - 1][0])
-        : 0;
-    let saldoAcumulado =
-      rowsCashFlow.length > 0
-        ? parseFloat(rowsCashFlow[rowsCashFlow.length - 1][8])
-        : 0;
-
-    const cashFlowData = [];
-    const cajaInicialData = []; // Array para almacenar las entradas del tipo "Caja Inicial"
-    let cajaInicialMañana = 0;
-    let cajaInicialTarde = 0;
-
-    // Procesar cada fila del flujo de caja
-    rowsCashFlow.forEach((row) => {
-      const tipo = row[1];
-      const monto = parseFloat(row[2]);
-      const descripcion = row[3];
-      const fecha = row[4];
-      const hora = row[5];
-      const periodo = row[6];
-      const cajaInicial = parseFloat(row[7]) || 0;
-      const cajaFinal = parseFloat(row[8]) || 0;
-
-      if (tipo.toLowerCase() === "caja inicial") {
-        cajaInicialData.push({
-          id: row[0],
-          tipo: tipo,
-          monto: monto,
-          descripcion: descripcion,
-          fecha: fecha,
-          hora: hora,
-          periodo: periodo,
-          cajaInicial: cajaInicial,
-          cajaFinal: cajaFinal,
-        });
-
-        if (periodo.toLowerCase() === "mañana") {
-          cajaInicialMañana = monto;
-        } else if (periodo.toLowerCase() === "tarde") {
-          cajaInicialTarde = monto;
-        }
-      } else {
-        if (tipo.toLowerCase() === "ingreso") {
-          saldoAcumulado += monto;
-        } else if (tipo.toLowerCase() === "gasto") {
-          saldoAcumulado -= monto;
-        }
-
-        cashFlowData.push({
-          id: row[0],
-          tipo: tipo,
-          monto: monto,
-          descripcion: descripcion,
-          fecha: fecha,
-          hora: hora,
-          periodo: periodo,
-          cajaInicial: cajaInicial,
-          cajaFinal: cajaFinal,
-        });
-      }
-    });
-
-    // 2. Obtener los datos de la hoja de ventas
-    const resVentas = await sheets.spreadsheets.values.get({
-      spreadsheetId: process.env.GOOGLE_SHEETS_ID,
-      range: "Ventas!A2:J", // Ajusta el rango según tus columnas
-    });
-
-    const rowsVentas = resVentas.data.values || [];
-
-    // Procesar cada fila de ventas y añadirlas como ingresos
-    const ventasData = rowsVentas
-      .map((ventaRow, index) => {
-        // Verificar si la columna 9 contiene "pendiente" (sin importar mayúsculas o minúsculas)
-        if (ventaRow[9].toLowerCase() === "pendiente") {
-          return null; // Saltear esta fila
-        }
-
-        const id = lastId + index + 1; // Incrementar el ID para las nuevas filas
-        const total = parseFloat(ventaRow[10]); // Ajusta el índice según la columna de 'Total'
-        const descripcion = `Venta Producto: ${ventaRow[3]}, Cliente: ${ventaRow[2]}`; // Ajusta los índices según tus columnas
-        const fechaVenta = ventaRow[11]; // Ajusta el índice según la columna de 'Fecha'
-        const horaVenta = ventaRow[12]; // Ajusta el índice según la columna de 'Hora'
-
-        // Sumar el total de la venta al saldo acumulado
-        saldoAcumulado += total;
-
-        return {
-          id: id.toString(),
-          tipo: "Ingreso", // Todas las ventas se consideran como ingresos
-          monto: total,
-          descripcion: descripcion,
-          fecha: fechaVenta,
-          hora: horaVenta, // Registrar la hora de la venta
-          periodo: "", // Puedes asignar el periodo si es necesario
-          cajaInicial: saldoAcumulado - total, // Caja inicial antes de esta venta
-          cajaFinal: saldoAcumulado, // Caja final actualizada
-        };
-      })
-      .filter((venta) => venta !== null); // Filtrar las filas que fueron saltadas
-
-    // 3. Combinar flujo de caja existente con las ventas
-    const allCashFlowData = [
-      ...cashFlowData,
-      ...ventasData,
-      ...cajaInicialData,
-    ]; // Incluir los datos de "Caja Inicial"
-
-    // 4. Calcular la caja inicial del día siguiente
-    const cajaInicialDiaSiguiente =
-      cajaInicialTarde > 0 ? cajaInicialTarde : cajaInicialMañana;
-
-    return {
-      cashFlowData: allCashFlowData,
-      lastId: lastId + rowsVentas.length,
-      cajaInicialMañana,
-      cajaInicialTarde,
-      cajaInicialDiaSiguiente,
-    };
-  } catch (error) {
-    console.error("Error al obtener el flujo de caja:", error.message);
-    throw new Error("Error al obtener el flujo de caja");
-  }
-}
-
-async function addCashFlowEntry(auth, data) {
-  try {
-    const { tipo, monto, descripcion, fecha, periodo } = data;
-    const hora = new Date().toLocaleTimeString("es-AR", {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: false,
-    });
-
-    const sheets = google.sheets({ version: "v4", auth });
-
-    const response = await sheets.spreadsheets.values.get({
-      spreadsheetId: process.env.GOOGLE_SHEETS_ID,
-      range: "FlujoDeCaja!A:A",
-    });
-
-    const rows = response.data.values || [];
-    let lastId =
-      rows.length > 1 ? parseInt(rows[rows.length - 1][0], 10) || 0 : 0;
-
-    // Obtener saldo acumulado y caja inicial del último movimiento del periodo específico
-    const lastRowResponse = await sheets.spreadsheets.values.get({
-      spreadsheetId: process.env.GOOGLE_SHEETS_ID,
-      range: `FlujoDeCaja!G2:H${rows.length + 1}`,
-    });
-
-    const lastRowData = lastRowResponse.data.values || [];
-    let saldoAcumulado =
-      lastRowData.length > 0
-        ? parseFloat(lastRowData[lastRowData.length - 1][1]) || 0
-        : 0;
-    let cajaInicial = 0;
-
-    if (tipo === "Caja Inicial") {
-      lastId += 1;
-      cajaInicial = parseFloat(monto);
-
-      // Crear una nueva fila con todos los datos y actualizar la columna "Caja inicial"
-      const newRow = [
-        lastId,
-        tipo,
-        cajaInicial,
-        descripcion,
-        fecha,
-        hora,
-        periodo,
-        cajaInicial, // Caja inicial
-        saldoAcumulado, // Caja final (puede estar en 0 o depender de lógica adicional)
-      ];
-
-      await sheets.spreadsheets.values.append({
-        spreadsheetId: process.env.GOOGLE_SHEETS_ID,
-        range: "FlujoDeCaja!A:I",
-        valueInputOption: "RAW",
-        resource: { values: [newRow] },
-      });
-
-      return {
-        id: newRow[0],
-        tipo,
-        monto,
-        descripcion,
-        fecha,
-        hora,
-        periodo,
-        cajaInicial: newRow[7],
-        cajaFinal: newRow[8],
-      };
-    }
-
-    const newSaldoAcumulado =
-      tipo === "Ingreso"
-        ? saldoAcumulado + parseFloat(monto)
-        : saldoAcumulado - parseFloat(monto);
-
-    const newRow = [
-      lastId + 1,
-      tipo,
-      parseFloat(monto),
-      descripcion,
-      fecha,
-      hora,
-      periodo,
-      cajaInicial,
-      newSaldoAcumulado,
-    ];
-
-    await sheets.spreadsheets.values.append({
-      spreadsheetId: process.env.GOOGLE_SHEETS_ID,
-      range: "FlujoDeCaja!A:I",
-      valueInputOption: "RAW",
-      resource: { values: [newRow] },
-    });
-
-    return {
-      id: newRow[0],
-      tipo,
-      monto,
-      descripcion,
-      fecha,
-      hora,
-      periodo,
-      cajaInicial,
-      cajaFinal: newSaldoAcumulado,
-    };
-  } catch (error) {
-    console.error("Error agregando el movimiento:", error);
-    throw new Error("Error agregando el movimiento al flujo de caja");
-  }
-}
-
-async function appendRowPayment(auth, rowData) {
-  const sheets = google.sheets({ version: "v4", auth });
-
-  const res = await sheets.spreadsheets.values.append({
-    spreadsheetId: process.env.GOOGLE_SHEETS_ID,
-    range: "PagosMp!A2:M", // Ajusta el rango y hoja según corresponda
-    valueInputOption: "USER_ENTERED",
-    resource: {
-      values: [rowData],
-    },
-  });
-
-  return res.data.updates;
-}
-
 module.exports = {
-  authorize,
   registerSaleDashboard,
   getSaleData,
   getWeeklySalesByClient,
@@ -1028,7 +1033,6 @@ module.exports = {
   getSaleDataUnitiInfo,
   getSalesByDate,
   increaseStock,
-  decreaseStock,
   deleteSalesById,
   getCashFlow,
   addCashFlowEntry,
@@ -1036,5 +1040,6 @@ module.exports = {
   getSaleByUserId,
   getSaleByClientId,
   putSaleChangeState,
-  getWeeklyAllSalesByClient
+  getWeeklyAllSalesByClient,
+  getSaleById,
 };

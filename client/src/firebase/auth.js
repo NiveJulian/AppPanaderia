@@ -26,20 +26,21 @@ export const doSignInWithGoogle = async () => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify({ token: token }),
+      // body: JSON.stringify({ token: token }), // Ya no es necesario
     });
 
     if (response.ok) {
       toast.success("Ingreso exitoso, redirigiendo..");
-      const { theUser } = await response.json();
+      const { user } = await response.json(); // El backend responde con { user }
       const { photoURL } = result.user;
       const userInfo = {
-        uid: theUser.uid,
-        email: theUser.email,
-        name: theUser.nombre,
+        uid: user.id, // el campo es 'id' en MySQL/Prisma
+        email: user.email,
+        name: user.name,
         picture: photoURL,
-        rol: theUser.rol, // Agregamos el rol al userInfo
+        rol: user.role, // el campo es 'role' en MySQL/Prisma
       };
       const secretKey = import.meta.env.VITE_SECRET_KEY_BYCRYPT;
 
@@ -54,8 +55,8 @@ export const doSignInWithGoogle = async () => {
       store.dispatch(loginWithGoogle(userInfo));
 
       setTimeout(() => {
-        if (theUser.rol === "vendedor" || theUser.rol === "admin") {
-          window.location.replace(`/dashboard/${theUser.uid}`);
+        if (user.role === "vendedor" || user.role === "admin") {
+          window.location.replace(`/dashboard/${user.id}`);
         } else {
           window.location.replace("/");
         }

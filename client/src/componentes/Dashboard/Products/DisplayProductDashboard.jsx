@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import toast from "react-hot-toast";
+import PropTypes from "prop-types";
 import { createSaleDashboard } from "../../../redux/actions/salesActions";
 import {
   addToCart,
@@ -10,10 +11,11 @@ import {
   incrementQuantity,
   removeFromCart,
 } from "../../../redux/actions/cartActions";
+import { deleteSheetRow, fetchSheetsByClient } from "../../../redux/actions/productActions";
 import Loader from "../../Loader/Loader";
 import TabCreateClient from "../Popup/TabCreateClient";
 import TabFormCreateProduct from "../Popup/TabFormCreateProduct";
-import { createProductByClientId } from "../../../redux/actions/productActions";
+// import { createProductByClientId } from "../../../redux/actions/productActions";
 
 const DisplayProductDashboard = ({ products, client, user }) => {
   const cartItems = useSelector((state) => state.cart.cartItems);
@@ -22,6 +24,7 @@ const DisplayProductDashboard = ({ products, client, user }) => {
   const [loading, setLoading] = useState(false);
   const [activeForm, setActiveForm] = useState(false);
   const [activeModalProduct, setActiveModalProduct] = useState(false);
+  const [deletingProduct, setDeletingProduct] = useState(null);
 
   const toggleModal = () => {
     setActiveForm(!activeForm);
@@ -68,61 +71,34 @@ const DisplayProductDashboard = ({ products, client, user }) => {
     };
     dispatch(createSaleDashboard(venta))
       .then(() => {
-        // Mostrar mensaje de éxito
-        toast.success("Venta creada exitosamente...");
-
-        // Limpiar el carrito
         dispatch(cleanCart());
       })
-      .catch((error) => {
-        // Mostrar mensaje de error si algo falla
-        toast.error("Hubo un error al crear la venta.");
-      })
       .finally(() => {
-        // Desactivar el loader cuando termine
         setLoading(false);
       });
   };
 
   const handleAddToCart = (product) => {
-    const available = product.stock;
-
     const existingCartItem = cartItems.find((item) => item.id === product.id);
 
     if (existingCartItem) {
-      if (existingCartItem.cantidad < available) {
+      if (existingCartItem.cantidad) {
         dispatch(incrementQuantity(product.id));
         toast.success("Cantidad actualizada en el carrito");
-      } else {
-        toast.error("No hay suficiente stock disponible");
       }
     } else {
-      if (available > 0) {
-        const data = {
-          id: product.id,
-          nombre: product.nombre,
-          cantidad: 1,
-          precio: product.precio,
-        };
-        dispatch(addToCart(data));
-        toast.success("Se agregó al carrito");
-      } else {
-        toast.error("Producto sin stock");
-      }
+      const data = {
+        id: product.id,
+        nombre: product.nombre,
+        cantidad: 1,
+        precio: product.precio,
+      };
+      dispatch(addToCart(data));
+      toast.success("Se agregó al carrito");
     }
   };
 
   const handdleEditButton = (product) => {
-    if (product.clientId) {
-      const data = {
-        id: product.id,
-        nombre: product.nombre,
-        cantidad: product.cantidad,
-        precio: product.precio,
-      };
-      setData(data);
-    }
-
     const data = {
       id: product.id,
       clientId: id,
@@ -131,6 +107,32 @@ const DisplayProductDashboard = ({ products, client, user }) => {
       precio: product.precio,
     };
     setData(data);
+    toggleModalProduct();
+  };
+
+  const handleDeleteProduct = async (product) => {
+    if (window.confirm(`¿Estás seguro de que quieres eliminar el producto "${product.nombre}"?`)) {
+      setDeletingProduct(product.id);
+      try {
+        await dispatch(deleteSheetRow(product.id));
+        // Recargar los productos del cliente después de eliminar
+        dispatch(fetchSheetsByClient(id));
+        toast.success("Producto eliminado exitosamente");
+      } catch (error) {
+        // Mostrar el mensaje de error específico del backend
+        const errorMessage = error.message || "Error al eliminar el producto";
+        toast.error(errorMessage);
+        console.error("Error deleting product:", error);
+      } finally {
+        setDeletingProduct(null);
+      }
+    }
+  };
+
+  const getDeleteButtonTooltip = () => {
+    // Aquí podrías agregar lógica para verificar si el producto tiene ventas
+    // Por ahora, mostramos un tooltip genérico
+    return "Eliminar producto";
   };
 
   const handleQuantityChange = (index, action) => {
@@ -199,7 +201,7 @@ const DisplayProductDashboard = ({ products, client, user }) => {
                 <div className="font-bold font-serif text-xl flex gap-2 justify-center items-center">
                   <span className="w-12 h-12 rounded-full bg-yellow-600"></span>
                   <span className="uppercase p-1 border border-gray-300 rounded-md text-white bg-yellow-600">
-                    {client?.nombre}
+                    {client?.name}
                   </span>
                 </div>
                 <span className="text-xs">Location ID#PDL009</span>
@@ -241,16 +243,22 @@ const DisplayProductDashboard = ({ products, client, user }) => {
                     <div key={i} className="w-full border border-gray-100">
                       <div className="flex flex-row">
                         <button
-                          onClick={() => {
-                            toggleModalProduct();
-                            handdleEditButton(product);
-                          }}
-                          className="w-full text-white bg-gray-700 border border-gray-100 p-2 shadow-md rounded-md hover:shadow-xl"
+                          onClick={() => handdleEditButton(product)}
+                          className="w-full text-white bg-gray-700 border border-gray-100 p-2 shadow-md rounded-md hover:shadow-xl active:translate-y-[1px]"
                         >
                           Editar
                         </button>
-                        <button className="w-full text-white bg-gray-400 border border-gray-100 p-2 shadow-md rounded-md hover:shadow-xl">
-                          Borrar
+                        <button
+                          onClick={() => handleDeleteProduct(product)}
+                          disabled={deletingProduct === product.id}
+                          title={getDeleteButtonTooltip()}
+                          className={`w-full text-white border border-gray-100 p-2 shadow-md rounded-md hover:shadow-xl active:translate-y-[1px] ${
+                            deletingProduct === product.id 
+                              ? "bg-red-600 cursor-not-allowed opacity-75" 
+                              : "bg-gray-400 hover:bg-red-500"
+                          }`}
+                        >
+                          {deletingProduct === product.id ? "Eliminando..." : "Borrar"}
                         </button>
                       </div>
                       <button
@@ -360,6 +368,12 @@ const DisplayProductDashboard = ({ products, client, user }) => {
       )}
     </div>
   );
+};
+
+DisplayProductDashboard.propTypes = {
+  products: PropTypes.array.isRequired,
+  client: PropTypes.object.isRequired,
+  user: PropTypes.object.isRequired,
 };
 
 export default DisplayProductDashboard;

@@ -28,11 +28,7 @@ const Dashboard = () => {
   return (
     <Layout isAuth={isAuth}>
       {activeForm && (
-        <TabCreateClient
-          uid={uid}
-          isOpen={activeForm}
-          onClose={toggleModal}
-        />
+        <TabCreateClient uid={uid} isOpen={activeForm} onClose={toggleModal} />
       )}
       <div className="flex justify-between items-center">
         <h1 className="text-xl text-white">Panel de control</h1>
@@ -76,7 +72,7 @@ const Dashboard = () => {
                       </svg>
 
                       <h4 className="mt-2 text-sm uppercase font-medium text-primary">
-                        {client.nombre}
+                        {client.name}
                       </h4>
                     </Link>
                   );

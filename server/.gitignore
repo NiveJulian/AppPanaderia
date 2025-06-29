@@ -4,3 +4,4 @@ credentials.json
 token.json
 servicesKeyAccount.json
 config/servicesKeyAccount.json
+/src/generated/prisma

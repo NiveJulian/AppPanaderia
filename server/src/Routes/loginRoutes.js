@@ -13,42 +13,20 @@ const {
   generateAuthUrl,
 } = require("../Controllers/login/authController");
 const { authorize } = require("../Controllers/sheets/sheetsController");
+const { loginWithFirebase } = require("../Controllers/login/loginController");
+const { authMiddleware } = require("../Middleware/authMiddleware");
 
-loginRoutes.post("/third", async (req, res) => {
+loginRoutes.post("/third", authMiddleware, async (req, res) => {
   try {
-    const { token } = req.body;
-    const decodedToken = await verifyToken(token);
-    const email = decodedToken.email;
-    // Configura el cliente de autenticación de Google
-    const authClient = await authorize();
-
-    let userData = await getUserByEmail(authClient, email);
-
-    // Si el usuario no existe, crea uno nuevo
-    if (!userData) {
-      userData = await createUser(authClient, {
-        uid: decodedToken.uid,
-        email: decodedToken.email,
-        name: decodedToken.name,
-        role: "user", // Asigna el rol por defecto como "user"
-      });
-    }
-
-    if (await isAdmin(email)) {
-      userData.rol = "admin";
-    } else if (await isSeller(authClient, email)) {
-      userData.rol = "vendedor";
-    }
-
+    // El usuario ya está verificado y autorizado por el middleware
+    const { uid, email, name } = req.user;
+    let user = await loginWithFirebase(req.headers.authorization.split(" ")[1]);
     res.status(200).json({
       message: "Authentication successful",
-      theUser: userData,
+      user,
     });
   } catch (error) {
-    console.log({ errorThirdRoute: error.message });
-    res
-      .status(500)
-      .json({ message: "Authentication failed", error: error.message });
+    res.status(401).json({ message: error.message });
   }
 });
 

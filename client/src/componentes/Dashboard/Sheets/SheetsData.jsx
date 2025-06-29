@@ -10,7 +10,6 @@ const SheetsData = ({
         <table className="basic mt-2">
           <thead>
             <tr className="border border-gray-500">
-              <th>ID</th>
               <th>Nombre</th>
               <th>Stock</th>
               <th>Precio</th>
@@ -32,7 +31,6 @@ const SheetsData = ({
                     key={index}
                     className={`border border-gray-600 ${rowClass} ${rowClassWarning}`}
                   >
-                    <td>{row.id}</td>
                     <td>{row.nombre}</td>
                     <td>{row.stock}</td>
                     <td>{row.precio}</td>

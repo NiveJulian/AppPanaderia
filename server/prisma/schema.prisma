@@ -1,0 +1,124 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         String   @id @default(uuid())
+  email      String   @unique
+  name       String
+  address    String?
+  province   String?
+  postalCode String?
+  role       String   @default("user")
+  createdAt  DateTime @default(now())
+  clients    Client[]
+  sales      Sale[]
+
+  @@map("user")
+}
+
+model Product {
+  id        String    @id @default(uuid())
+  name      String
+  stock     Int
+  price     Float
+  published Boolean   @default(true)
+  clientId  String?
+  client    Client?   @relation(fields: [clientId], references: [id])
+  sales     Sale[]
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime? @updatedAt @map("updated_at")
+
+  @@map("product")
+}
+
+model Client {
+  id        String    @id @default(uuid())
+  name      String
+  address   String?
+  phone     String?
+  userId    String
+  user      User      @relation(fields: [userId], references: [id])
+  sales     Sale[]
+  products  Product[]
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime? @updatedAt @map("updated_at")
+
+  @@map("client")
+}
+
+model Sale {
+  id          String    @id @default(uuid())
+  productId   String
+  clientId    String
+  quantity    Int
+  subtotal    Float
+  payment     String?
+  orderStatus String
+  total       Float
+  date        DateTime  @default(now())
+  time        String    @default("00:00")
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  client      Client    @relation(fields: [clientId], references: [id])
+  product     Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  tickets     Ticket[]
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime? @updatedAt @map("updated_at")
+
+  @@map("sale")
+}
+
+model Ticket {
+  id        String    @id @default(uuid())
+  saleId    String
+  sale      Sale      @relation(fields: [saleId], references: [id])
+  pdfBase64 String
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime? @updatedAt @map("updated_at")
+
+  @@map("ticket")
+}
+
+model CashFlow {
+  id          String    @id @default(uuid())
+  type        String // "Ingreso", "Gasto", "Caja Inicial"
+  amount      Float
+  description String
+  date        DateTime
+  time        String
+  period      String? // "Mañana", "Tarde"
+  initialCash Float     @default(0)
+  finalCash   Float     @default(0)
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime? @updatedAt @map("updated_at")
+
+  @@map("cashflow")
+}
+
+model Payment {
+  id            String    @id @default(uuid())
+  amount        Float
+  currency      String    @default("ARS")
+  description   String?
+  status        String    @default("pending")
+  paymentMethod String
+  externalId    String?
+  metadata      Json?
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime? @updatedAt @map("updated_at")
+
+  @@map("payment")
+}

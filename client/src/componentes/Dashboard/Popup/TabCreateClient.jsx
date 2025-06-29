@@ -10,9 +10,9 @@ import {
 export default function TabCreateClient({ isOpen, onClose, cliente, uid }) {
   const dispatch = useDispatch();
   const [formData, setFormData] = useState({
-    nombre: "",
-    direccion: "",
-    celular: "",
+    name: "",
+    address: "",
+    phone: "",
   });
   const [errors, setErrors] = useState({});
   const memoizedErrors = useMemo(() => {
@@ -27,9 +27,9 @@ export default function TabCreateClient({ isOpen, onClose, cliente, uid }) {
     if (cliente) {
       setFormData({
         id: cliente.id || "",
-        nombre: cliente.nombre || "",
-        direccion: cliente.direccion || "",
-        celular: cliente.celular || "",
+        name: cliente.nombre || "",
+        address: cliente.direccion || "",
+        phone: cliente.celular || "",
       });
     }
   }, [cliente]);
@@ -49,18 +49,18 @@ export default function TabCreateClient({ isOpen, onClose, cliente, uid }) {
       try {
         if (cliente) {
           const updateRow = {
-            nombre: formData.nombre,
-            direccion: formData.direccion,
-            celular: formData.celular,
+            name: formData.name,
+            address: formData.address,
+            phone: formData.phone,
             uid,
           };
 
           dispatch(updateClient(cliente.id, updateRow));
         } else {
           const newRow = {
-            nombre: formData.nombre,
-            direccion: formData.direccion,
-            celular: formData.celular,
+            name: formData.name,
+            address: formData.address,
+            phone: formData.phone,
             uid,
           };
           dispatch(createClient(newRow));
@@ -87,15 +87,15 @@ export default function TabCreateClient({ isOpen, onClose, cliente, uid }) {
           &times;
         </button>
         <div className="mt-2">
-          <label htmlFor="nombre">Nombre</label>
+          <label htmlFor="name">Nombre</label>
           <input
             className={`bg-white w-full p-2 text-center mt-2 rounded-md border ${
               errors.nombre ? "border-red-500" : "border-gray-400"
             }`}
             type="text"
-            id="nombre"
-            name="nombre"
-            value={formData.nombre}
+            id="name"
+            name="name"
+            value={formData.name}
             onChange={handleChange}
             placeholder="Nombre"
           />
@@ -104,15 +104,15 @@ export default function TabCreateClient({ isOpen, onClose, cliente, uid }) {
           )}
         </div>
         <div className="mt-2">
-          <label htmlFor="direccion">Direccion</label>
+          <label htmlFor="address">Direccion</label>
           <input
             className={`bg-white w-full p-2 text-center mt-2 rounded-md border ${
               errors.direccion ? "border-red-500" : "border-gray-400"
             }`}
             type="text"
-            id="direccion"
-            name="direccion"
-            value={formData.direccion}
+            id="address"
+            name="address"
+            value={formData.address}
             onChange={handleChange}
             placeholder="direccion"
           />
@@ -121,15 +121,15 @@ export default function TabCreateClient({ isOpen, onClose, cliente, uid }) {
           )}
         </div>
         <div className="mt-2">
-          <label htmlFor="celular">Celular</label>
+          <label htmlFor="phone">Celular</label>
           <input
             className={`bg-white w-full p-2 text-center mt-2 rounded-md border ${
               errors.celular ? "border-red-500" : "border-gray-400"
             }`}
             type="text"
-            id="celular"
-            name="celular"
-            value={formData.celular}
+            id="phone"
+            name="phone"
+            value={formData.phone}
             onChange={handleChange}
             placeholder="celular"
           />

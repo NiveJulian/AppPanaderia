@@ -40,6 +40,7 @@ model Product {
   sales     Sale[]
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime? @updatedAt @map("updated_at")
+  deleted   Boolean   @default(false)
 
   @@map("product")
 }
@@ -55,6 +56,7 @@ model Client {
   products  Product[]
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime? @updatedAt @map("updated_at")
+  deleted   Boolean   @default(false)
 
   @@map("client")
 }
@@ -73,10 +75,11 @@ model Sale {
   userId      String
   user        User      @relation(fields: [userId], references: [id])
   client      Client    @relation(fields: [clientId], references: [id])
-  product     Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  product     Product   @relation(fields: [productId], references: [id])
   tickets     Ticket[]
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime? @updatedAt @map("updated_at")
+  deleted     Boolean   @default(false)
 
   @@map("sale")
 }
@@ -88,22 +91,24 @@ model Ticket {
   pdfBase64 String
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime? @updatedAt @map("updated_at")
+  deleted   Boolean   @default(false)
 
   @@map("ticket")
 }
 
 model CashFlow {
   id          String    @id @default(uuid())
-  type        String // "Ingreso", "Gasto", "Caja Inicial"
+  type        String // "Ingreso", "to", "Caja Inicial"
   amount      Float
   description String
   date        DateTime
   time        String
-  period      String? // "Mañana", "Tarde"
+  period      String? // "Mañana", "Tar"
   initialCash Float     @default(0)
   finalCash   Float     @default(0)
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime? @updatedAt @map("updated_at")
+  deleted     Boolean   @default(false)
 
   @@map("cashflow")
 }
@@ -119,6 +124,7 @@ model Payment {
   metadata      Json?
   createdAt     DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime? @updatedAt @map("updated_at")
+  deleted       Boolean   @default(false)
 
   @@map("payment")
 }

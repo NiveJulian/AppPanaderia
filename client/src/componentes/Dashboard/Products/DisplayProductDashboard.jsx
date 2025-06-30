@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import toast from "react-hot-toast";
 import PropTypes from "prop-types";
@@ -11,10 +11,15 @@ import {
   incrementQuantity,
   removeFromCart,
 } from "../../../redux/actions/cartActions";
-import { deleteSheetRow, fetchSheetsByClient } from "../../../redux/actions/productActions";
+import {
+  deleteSheetRow,
+  fetchSheetsByClient,
+} from "../../../redux/actions/productActions";
 import Loader from "../../Loader/Loader";
 import TabCreateClient from "../Popup/TabCreateClient";
 import TabFormCreateProduct from "../Popup/TabFormCreateProduct";
+import { deleteClient } from "../../../redux/actions/clientActions";
+import TabDeleteClientModal from "../Popup/TabDeleteClientModal";
 // import { createProductByClientId } from "../../../redux/actions/productActions";
 
 const DisplayProductDashboard = ({ products, client, user }) => {
@@ -25,6 +30,10 @@ const DisplayProductDashboard = ({ products, client, user }) => {
   const [activeForm, setActiveForm] = useState(false);
   const [activeModalProduct, setActiveModalProduct] = useState(false);
   const [deletingProduct, setDeletingProduct] = useState(null);
+  const navigate = useNavigate();
+
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletingClient, setDeletingClient] = useState(false);
 
   const toggleModal = () => {
     setActiveForm(!activeForm);
@@ -46,6 +55,23 @@ const DisplayProductDashboard = ({ products, client, user }) => {
     let totalFinal = total;
 
     return totalFinal.toFixed(2);
+  };
+
+  const handleDeleteClient = async () => {
+    setDeletingClient(true);
+    try {
+      await dispatch(deleteClient(id));
+      toast.success("Cliente y productos eliminados correctamente");
+      setShowDeleteModal(false);
+
+      setTimeout(() => {
+        navigate(-1);
+      }, 2000);
+    } catch (error) {
+      toast.error(error.message || "Error al eliminar el cliente");
+    } finally {
+      setDeletingClient(false);
+    }
   };
 
   const handleCreateVenta = () => {
@@ -111,7 +137,11 @@ const DisplayProductDashboard = ({ products, client, user }) => {
   };
 
   const handleDeleteProduct = async (product) => {
-    if (window.confirm(`¿Estás seguro de que quieres eliminar el producto "${product.nombre}"?`)) {
+    if (
+      window.confirm(
+        `¿Estás seguro de que quieres eliminar el producto "${product.nombre}"?`
+      )
+    ) {
       setDeletingProduct(product.id);
       try {
         await dispatch(deleteSheetRow(product.id));
@@ -127,12 +157,6 @@ const DisplayProductDashboard = ({ products, client, user }) => {
         setDeletingProduct(null);
       }
     }
-  };
-
-  const getDeleteButtonTooltip = () => {
-    // Aquí podrías agregar lógica para verificar si el producto tiene ventas
-    // Por ahora, mostramos un tooltip genérico
-    return "Eliminar producto";
   };
 
   const handleQuantityChange = (index, action) => {
@@ -173,6 +197,14 @@ const DisplayProductDashboard = ({ products, client, user }) => {
 
   return (
     <div className="container mx-auto bg-white border border-gray-300 shadow-lg">
+      {showDeleteModal && (
+        <TabDeleteClientModal
+          isOpen={showDeleteModal}
+          onClose={() => setShowDeleteModal(false)}
+          onConfirm={handleDeleteClient}
+          clientName={client?.name}
+        />
+      )}
       {activeForm && (
         <TabCreateClient
           isOpen={activeForm}
@@ -207,7 +239,13 @@ const DisplayProductDashboard = ({ products, client, user }) => {
                 <span className="text-xs">Location ID#PDL009</span>
               </div>
               <div className="flex items-center">
-                <div className="text-sm text-center mr-4">
+                <div className="text-sm text-center mr-4 flex flex-row gap-2">
+                  <button
+                    onClick={() => setShowDeleteModal(true)}
+                    className="font-semibold border p-2 border-red-400 rounded-md bg-red-500 text-white shadow-md ml-2 hover:bg-red-600"
+                  >
+                    Eliminar cliente
+                  </button>
                   <div className="font-light text-gray-500"></div>
                   <button
                     onClick={() => toggleModal()}
@@ -219,7 +257,7 @@ const DisplayProductDashboard = ({ products, client, user }) => {
                 <div className="text-sm text-center mr-4">
                   <div className="font-light text-gray-500"></div>
                   <Link
-                    to={`/dashboard/products/${id}/sales`}
+                    to={`/dashboard/sales/weekly-sales/${id}`}
                     className="font-semibold border p-2 border-gray-400 rounded-md bg-gray-400 text-white shadow-md active:translate-y-[1px]"
                   >
                     Ver historial
@@ -253,12 +291,14 @@ const DisplayProductDashboard = ({ products, client, user }) => {
                           disabled={deletingProduct === product.id}
                           title={getDeleteButtonTooltip()}
                           className={`w-full text-white border border-gray-100 p-2 shadow-md rounded-md hover:shadow-xl active:translate-y-[1px] ${
-                            deletingProduct === product.id 
-                              ? "bg-red-600 cursor-not-allowed opacity-75" 
+                            deletingProduct === product.id
+                              ? "bg-red-600 cursor-not-allowed opacity-75"
                               : "bg-gray-400 hover:bg-red-500"
                           }`}
                         >
-                          {deletingProduct === product.id ? "Eliminando..." : "Borrar"}
+                          {deletingProduct === product.id
+                            ? "Eliminando..."
+                            : "Borrar"}
                         </button>
                       </div>
                       <button

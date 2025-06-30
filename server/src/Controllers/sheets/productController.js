@@ -1,8 +1,9 @@
-const prisma = require('../../lib/prisma');
+const prisma = require("../../lib/prisma");
 
 async function getSheetData() {
   try {
     const products = await prisma.product.findMany({
+      where: { deleted: false },
       include: {
         client: {
           select: {
@@ -46,7 +47,7 @@ async function getSheetData() {
 async function getSheetDataById(id) {
   try {
     const product = await prisma.product.findUnique({
-      where: { id },
+      where: { id, deleted: false },
       include: {
         client: {
           select: {
@@ -163,11 +164,13 @@ async function deleteRowById(id) {
   try {
     // Verificar si el producto tiene ventas asociadas
     const salesCount = await prisma.sale.count({
-      where: { productId: id }
+      where: { productId: id },
     });
 
     if (salesCount > 0) {
-      throw new Error(`No se puede eliminar el producto porque tiene ${salesCount} venta(s) asociada(s). Elimine las ventas primero.`);
+      throw new Error(
+        `No se puede eliminar el producto porque tiene ${salesCount} venta(s) asociada(s). Elimine las ventas primero.`
+      );
     }
 
     const product = await prisma.product.delete({
@@ -274,7 +277,7 @@ async function decreaseStock(productId, amount) {
     }
 
     const newStock = product.stock - parseInt(amount);
-    
+
     // Permitir stock negativo (ventas sin stock)
     // if (newStock < 0) {
     //   throw new Error("Stock insuficiente");
@@ -304,12 +307,12 @@ async function decreaseStock(productId, amount) {
 async function checkProductSales(id) {
   try {
     const salesCount = await prisma.sale.count({
-      where: { productId: id }
+      where: { productId: id },
     });
 
     return {
       hasSales: salesCount > 0,
-      salesCount: salesCount
+      salesCount: salesCount,
     };
   } catch (error) {
     console.log({ error: error.message });

@@ -7,6 +7,7 @@ export const GET_CLIENT_BY_USER_ID = "GET_CLIENT_BY_USER_ID";
 export const CREATE_CLIENT = "CREATE_CLIENT";
 export const UPDATE_CLIENT = "UPDATE_CLIENT";
 export const GET_SALES_WEEKLY_BY_CLIENT_ID = "GET_SALES_WEEKLY_BY_CLIENT_ID";
+export const DELETE_CLIENT = "DELETE_CLIENT";
 
 export const getClientById = (id) => async (dispatch) => {
   try {
@@ -24,7 +25,6 @@ export const getClientById = (id) => async (dispatch) => {
 export const getClientByUserID = (uid) => async (dispatch) => {
   try {
     const response = await instance.get(`/api/clients/user/${uid}`);
-    console.log(response);
     dispatch({
       type: GET_CLIENT_BY_USER_ID,
       payload: response.data,
@@ -101,3 +101,14 @@ export const getSalesWeeklyByClientID = (id) => async (dispatch) => {
   }
 };
 
+export const deleteClient = (id) => async (dispatch) => {
+  try {
+    const response = await instance.delete(`/api/clients/delete/${id}`);
+    dispatch({
+      type: DELETE_CLIENT,
+      payload: response.data,
+    });
+  } catch (error) {
+    console.log(error);
+  }
+};

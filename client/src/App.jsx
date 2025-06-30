@@ -1,9 +1,7 @@
 import { Route, Routes } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import { useDispatch, useSelector } from "react-redux";
-import {
-  authenticateUserFromSession,
-} from "./redux/actions/authActions";
+import { authenticateUserFromSession } from "./redux/actions/authActions";
 import { useEffect } from "react";
 import Login from "./pages/dashboard/Login";
 import Dashboard from "./pages/dashboard/Dashboard";
@@ -18,7 +16,6 @@ import PagePayment from "./pages/dashboard/PagePayment";
 import DashboardClientId from "./pages/dashboard/DashboardClientId";
 import SalesWeeklyByClient from "./pages/dashboard/SalesWeelyByClient";
 import WeeklySales from "./pages/dashboard/WeeklySales";
-
 
 function App() {
   const dispatch = useDispatch();
@@ -54,11 +51,21 @@ function App() {
         {isAuth ? (
           <Route>
             <Route path="/dashboard/:uid" element={<Dashboard />} />
-            <Route path="/dashboard/client/:id" element={<DashboardClientId />} />
+            <Route
+              path="/dashboard/client/:id"
+              element={<DashboardClientId />}
+            />
             <Route path="/dashboard/products" element={<Products />} />
-            <Route path="/dashboard/products/:id/sales" element={<SalesWeeklyByClient />} />
+            <Route
+              path="/dashboard/products/:id/sales"
+              element={<SalesWeeklyByClient />}
+            />
             <Route path="/dashboard/sales" element={<Sales />} />
-            <Route path="/dashboard/sales/:uid" element={<SalesForSeller />} />
+            {/* <Route path="/dashboard/sales/:uid" element={<SalesForSeller />} /> */}
+            <Route
+              path="/dashboard/sales/weekly-sales/:clientId"
+              element={<WeeklySales />}
+            />
             <Route path="/dashboard/weekly-sales" element={<WeeklySales />} />
             <Route path="/dashboard/users" element={<Users />} />
             <Route path="/dashboard/balance" element={<Balance />} />

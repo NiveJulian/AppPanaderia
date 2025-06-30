@@ -1,13 +1,12 @@
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import { Layout } from "../../componentes/Dashboard/Layout/Layout";
 import { useDispatch, useSelector } from "react-redux";
 import DisplayProductDashboard from "../../componentes/Dashboard/Products/DisplayProductDashboard";
 import {
-  fetchSheets,
   fetchSheetsByClient,
 } from "../../redux/actions/productActions";
 import { getClientById } from "../../redux/actions/clientActions";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 
 const DashboardClientId = () => {
   const isAuth = useSelector((state) => state.auth.isAuth);
@@ -16,8 +15,8 @@ const DashboardClientId = () => {
 
   const { id } = useParams();
   const dispatch = useDispatch();
-
   const client = useSelector((state) => state.client.client);
+  const navigate = useNavigate();
 
   // const isEmpty = (obj) => Object.keys(obj).length === 0;
 
@@ -25,6 +24,18 @@ const DashboardClientId = () => {
     dispatch(fetchSheetsByClient(id));
     dispatch(getClientById(id));
   }, [dispatch, id]);
+
+  useEffect(() => {
+    // Si client es null, undefined, o un objeto vacío, redirige
+    if (!client || Object.keys(client).length === 0) {
+      if (user && user.uid) {
+        navigate(`/dashboard/${user.uid}`);
+      } else {
+        navigate("/error");
+      }
+    }
+    // Si usas soft delete, puedes validar: if (client.deletedAt) { ... }
+  }, [client, navigate, user]);
 
   return (
     <Layout isAuth={isAuth}>

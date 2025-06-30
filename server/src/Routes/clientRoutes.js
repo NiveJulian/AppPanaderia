@@ -5,6 +5,7 @@ const {
   getClientById,
   updateClient,
   getClientByUserId,
+  deleteClientAndProducts,
 } = require("../Controllers/sheets/clientController");
 const {
   authorize,
@@ -111,6 +112,17 @@ clientRoutes.get("/:id/ventas-por-semana", async (req, res) => {
   } catch (error) {
     console.log({ error: error.message });
     res.status(500).send("Error al obtener las ventas semanales");
+  }
+});
+
+clientRoutes.delete("/delete/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await deleteClientAndProducts(id);
+    res.status(200).json(result);
+  } catch (error) {
+    console.log({ error: error.message });
+    res.status(500).json({ error: error.message });
   }
 });
 

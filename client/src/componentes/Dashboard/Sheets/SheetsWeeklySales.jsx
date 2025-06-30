@@ -11,6 +11,7 @@ import { useDispatch } from "react-redux";
 import { generateWeeklySalesPDF } from "../../../redux/actions/salesActions";
 import Loader from "../../Loader/Loader";
 import ClientSalesModal from "./ClientSalesModal";
+import { useParams } from "react-router-dom";
 
 const SheetsWeeklySales = () => {
   const [weeklyData, setWeeklyData] = useState(null);
@@ -19,6 +20,7 @@ const SheetsWeeklySales = () => {
   const [selectedClient, setSelectedClient] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const { clientId } = useParams();
   const dispatch = useDispatch();
 
   useEffect(() => {
@@ -28,14 +30,23 @@ const SheetsWeeklySales = () => {
   const fetchWeeklySales = async () => {
     try {
       setLoading(true);
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/sheets/sales/weekly`
-      );
+      let url;
+      if (clientId) {
+        url = `${
+          import.meta.env.VITE_API_URL
+        }/api/sheets/sales/weekly/client/${clientId}`;
+      } else {
+        url = `${import.meta.env.VITE_API_URL}/api/sheets/sales/weekly`;
+      }
+      const response = await fetch(url);
       if (!response.ok) {
         throw new Error("Error al obtener las ventas semanales");
       }
       const data = await response.json();
-      setWeeklyData(data.total);
+      // Si es por cliente, la respuesta puede ser diferente, ajusta según tu backend
+      setWeeklyData(
+        clientId ? { clients: [data], weekInfo: data.weekInfo } : data.total
+      );
     } catch (error) {
       console.error("Error:", error);
       setError(error.message);
@@ -47,13 +58,15 @@ const SheetsWeeklySales = () => {
   const handleSendMessage = (client) => {
     const mensaje = `Hola ${client.clientName}! 
 
-Resumen de tus compras esta semana (${client.weekStart} al ${client.weekEnd}):
+    Resumen de tus compras esta semana (${client.weekStart} al ${
+      client.weekEnd
+    }):
 
-💰 Total gastado: $${client.totalSales}
-🛒 Cantidad de compras: ${client.salesCount}
-📊 Promedio por compra: $${client.averageSale.toFixed(2)}
+    💰 Total gastado: $${client.totalSales}
+    🛒 Cantidad de compras: ${client.salesCount}
+    📊 Promedio por compra: $${client.averageSale.toFixed(2)}
 
-¡Gracias por tu confianza!`;
+    ¡Gracias por tu confianza!`;
 
     const numeroWhatsapp = client.clientPhone;
     if (numeroWhatsapp) {
@@ -93,11 +106,16 @@ Resumen de tus compras esta semana (${client.weekStart} al ${client.weekEnd}):
     });
   };
 
-  // Filtrar clientes basado en el término de búsqueda
-  const filteredClients = weeklyData?.clients?.filter((client) =>
-    client.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.clientPhone.includes(searchTerm)
-  ) || [];
+  // Filtrar clientes basado en el término de búsqueda y que tengan datos válidos
+  const filteredClients =
+    (weeklyData?.clients?.filter(
+      (client) =>
+        (client.clientName?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
+        (client.clientPhone || "").includes(searchTerm)
+    ) || []).filter(
+      (client) =>
+        client && (client.clientName || client.clientPhone || client.totalSales || client.salesCount)
+    );
 
   if (loading) {
     return <Loader />;
@@ -215,7 +233,7 @@ Resumen de tus compras esta semana (${client.weekStart} al ${client.weekEnd}):
             <h3 className="text-lg font-semibold text-gray-800">
               Clientes con Compras
             </h3>
-            
+
             {/* Buscador */}
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -230,11 +248,12 @@ Resumen de tus compras esta semana (${client.weekStart} al ${client.weekEnd}):
               />
             </div>
           </div>
-          
+
           {/* Información de resultados */}
           {searchTerm && (
             <div className="mt-2 text-sm text-gray-600">
-              Mostrando {filteredClients.length} de {weeklyData.clients.length} clientes
+              Mostrando {filteredClients.length} de {weeklyData.clients.length}{" "}
+              clientes
             </div>
           )}
         </div>
@@ -265,89 +284,92 @@ Resumen de tus compras esta semana (${client.weekStart} al ${client.weekEnd}):
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredClients.length > 0 ? (
-                filteredClients.map((client) => (
-                  <tr key={client.clientId} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div>
-                        <div className="text-sm font-medium text-gray-900">
-                          {client.clientName}
+                filteredClients.map((client, i) => {
+                  // console.log(client);
+                  return (
+                    <tr key={i} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div>
+                          <div className="text-sm font-medium text-gray-900">
+                            {client.clientName}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {client.clientPhone}
+                          </div>
                         </div>
-                        <div className="text-sm text-gray-500">
-                          {client.clientPhone}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-semibold text-green-600">
+                          {formatCurrency(Number(client.totalSales) || 0)}
                         </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-semibold text-green-600">
-                        {formatCurrency(client.totalSales)}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
-                        {client.salesCount}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
-                        {formatCurrency(client.averageSale)}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
-                        {formatDate(client.lastSaleDate)}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex space-x-2">
-                        {client.clientPhone && (
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">
+                          {client.salesCount ?? 0}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">
+                          {formatCurrency(Number(client.averageSale) || 0)}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900">
+                          {client.lastSaleDate ? formatDate(client.lastSaleDate) : "-"}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <div className="flex space-x-2">
+                          {client.clientPhone && (
+                            <button
+                              onClick={() => handleSendMessage(client)}
+                              className="text-green-600 hover:text-green-900 p-1 rounded"
+                              title="Enviar resumen por WhatsApp"
+                            >
+                              <FaWhatsapp size={16} />
+                            </button>
+                          )}
                           <button
-                            onClick={() => handleSendMessage(client)}
-                            className="text-green-600 hover:text-green-900 p-1 rounded"
-                            title="Enviar resumen por WhatsApp"
+                            onClick={() => handleGeneratePDF(client)}
+                            className="text-red-600 hover:text-red-900 p-1 rounded"
+                            title="Generar PDF de ventas semanales"
                           >
-                            <FaWhatsapp size={16} />
+                            <FaFilePdf size={16} />
                           </button>
-                        )}
-                        <button
-                          onClick={() => handleGeneratePDF(client)}
-                          className="text-red-600 hover:text-red-900 p-1 rounded"
-                          title="Generar PDF de ventas semanales"
-                        >
-                          <FaFilePdf size={16} />
-                        </button>
-                        <button
-                          onClick={() => handleViewDetails(client)}
-                          className="text-blue-600 hover:text-blue-900 p-1 rounded"
-                          title="Ver detalles completos"
-                        >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            strokeWidth="1.5"
-                            stroke="currentColor"
-                            className="w-4 h-4"
+                          <button
+                            onClick={() => handleViewDetails(client)}
+                            className="text-blue-600 hover:text-blue-900 p-1 rounded"
+                            title="Ver detalles completos"
                           >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z"
-                            />
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"
-                            />
-                          </svg>
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              strokeWidth="1.5"
+                              stroke="currentColor"
+                              className="w-4 h-4"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z"
+                              />
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"
+                              />
+                            </svg>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
               ) : (
                 <tr>
                   <td colSpan="6" className="px-6 py-8 text-center text-gray-500">
-                    {searchTerm ? "No se encontraron clientes con ese criterio de búsqueda" : "No hay clientes disponibles"}
+                    No hay ventas actualmente
                   </td>
                 </tr>
               )}

@@ -14,6 +14,7 @@ const {
   getSaleByClientId,
   getWeeklySalesByUser,
   getSaleById,
+  getWeeklyAllSalesByClient,
 } = require("../Controllers/sheets/sheetsController.js");
 const {
   getSheetData,

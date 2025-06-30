@@ -1,16 +1,23 @@
-import React, { useState } from "react";// Asegúrate de que la ruta sea correcta
+import { useState } from "react";
 import { doSignInWithEmailAndPassword } from "../../../firebase/auth";
+import toast from "react-hot-toast";
 
 export const FormLogin = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    setIsLoading(true);
+    
     try {
       await doSignInWithEmailAndPassword(email, password);
     } catch (error) {
       console.error("Error al ingresar:", error);
+      toast.error("Error al ingresar. Verifica tus credenciales.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -42,9 +49,10 @@ export const FormLogin = () => {
       </div>
       <button
         type="submit"
-        className="p-2 border mt-3 bg-secondary text-white rounded-full hover:bg-primary w-full"
+        disabled={isLoading}
+        className="p-2 border mt-3 bg-secondary text-white rounded-full hover:bg-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        Ingresar
+        {isLoading ? "Ingresando..." : "Ingresar"}
       </button>
     </form>
   );

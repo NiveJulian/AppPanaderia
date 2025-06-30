@@ -1,8 +1,8 @@
-import React, { useState } from "react"; // Asegúrate de que la ruta sea correcta
+import { useState } from "react";
 import {
   createNewUser,
-  doSignInWithEmailAndPassword,
 } from "../../../firebase/auth";
+import toast from "react-hot-toast";
 
 export const FormRegister = () => {
   const [name, setName] = useState("");
@@ -11,9 +11,12 @@ export const FormRegister = () => {
   const [postalCode, setPostalCode] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    setIsLoading(true);
+    
     try {
       const data = {
         email,
@@ -26,7 +29,10 @@ export const FormRegister = () => {
       };
       await createNewUser(data);
     } catch (error) {
-      console.error("Error al ingresar:", error);
+      console.error("Error al registrar:", error);
+      toast.error("Error al registrar usuario. Verifica los datos.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -141,9 +147,10 @@ export const FormRegister = () => {
       </div>
       <button
         type="submit"
-        className="p-2 border mt-3 bg-secondary text-white rounded-full hover:bg-primary w-full"
+        disabled={isLoading}
+        className="p-2 border mt-3 bg-secondary text-white rounded-full hover:bg-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        Ingresar
+        {isLoading ? "Registrando..." : "Registrar"}
       </button>
     </form>
   );

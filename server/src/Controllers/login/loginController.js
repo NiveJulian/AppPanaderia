@@ -15,7 +15,7 @@ async function loginWithFirebase(token) {
       user = await createUser({
         id: uid,
         email,
-        name,
+        name: name || email.split('@')[0], // Usar email como nombre si no hay nombre
         role: "user",
       });
     }

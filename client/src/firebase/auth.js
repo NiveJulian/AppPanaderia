@@ -94,22 +94,22 @@ export const doSignInWithEmailAndPassword = async (email, password) => {
       const sellerData = await response.json();
       console.log(sellerData);
       let userInfo;
-      if (sellerData.rol === "user") {
+      if (sellerData.role === "admin") {
         userInfo = {
-          uid: sellerData.uid,
+          uid: sellerData.id,
           email: sellerData.email,
-          name: sellerData.nombre,
-          direccion: sellerData.direccion,
-          provincia: sellerData.provincia,
-          cp: sellerData.cp,
-          rol: sellerData.rol,
+          name: sellerData.name,
+          address: sellerData.address,
+          province: sellerData.province,
+          postalCode: sellerData.postalCode,
+          rol: sellerData.role,
         };
       } else {
         userInfo = {
-          uid: sellerData.uid,
+          uid: sellerData.id,
           email: sellerData.email,
-          name: sellerData.nombre,
-          rol: sellerData.rol,
+          name: sellerData.name,
+          rol: sellerData.role,
         };
       }
 
@@ -125,9 +125,11 @@ export const doSignInWithEmailAndPassword = async (email, password) => {
 
       store.dispatch(loginWithGoogle(userInfo));
 
+      console.log(sellerData);
+
       setTimeout(() => {
-        if (sellerData.rol === "seller" || sellerData.rol === "admin") {
-          window.location.replace(`/dashboard/${sellerData.uid}`);
+        if (sellerData.role === "seller" || sellerData.role === "admin") {
+          window.location.replace(`/dashboard/${sellerData.id}`);
         } else {
           window.location.replace("/");
         }

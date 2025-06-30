@@ -32,17 +32,22 @@ loginRoutes.post("/email", async (req, res) => {
   try {
     const { token } = req.body;
     const decodedToken = await verifyToken(token);
-    const email = decodedToken.email;
-    const sellerData = await getUserByEmail(email);
+    const { uid, email, name } = decodedToken;
+    
+    // Buscar el usuario por email
+    let user = await getUserByEmail(email);
 
-    if (sellerData) {
-      res.status(200).json({
-        ...sellerData,
-        rol: sellerData.rol, // Asegúrate de que el rol esté incluido
+    // Si no existe, crear uno nuevo
+    if (!user) {
+      user = await createUser({
+        id: uid,
+        email,
+        name: name || email.split('@')[0],
+        role: "user",
       });
-    } else {
-      res.status(403).json({ message: "User is not authorized" });
     }
+
+    res.status(200).json(user);
   } catch (error) {
     console.log({ error: error.message });
     res

@@ -103,7 +103,7 @@ const Login = () => {
           >
             <div className="relative flex items-center space-x-4 justify-center">
               <LazyLoadImage
-                src="https://tailus.io/sources/blocks/social/preview/images/google.svg"
+                src="/google.webp"
                 className="absolute left-0 w-5"
                 alt="google logo"
               />

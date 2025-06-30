@@ -12,6 +12,7 @@ import { generateWeeklySalesPDF } from "../../../redux/actions/salesActions";
 import Loader from "../../Loader/Loader";
 import ClientSalesModal from "./ClientSalesModal";
 import { useParams } from "react-router-dom";
+import instance from "../../../api/axiosConfig";
 
 const SheetsWeeklySales = () => {
   const [weeklyData, setWeeklyData] = useState(null);
@@ -38,15 +39,23 @@ const SheetsWeeklySales = () => {
       } else {
         url = `${import.meta.env.VITE_API_URL}/api/sheets/sales/weekly`;
       }
-      const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error("Error al obtener las ventas semanales");
+      const response = await instance.get(url);
+
+      const data = response.data;
+      // Si es por cliente, usar los datos del cliente directamente
+      if (clientId) {
+        setWeeklyData({
+          clients: [data],
+          weekInfo: data.weekInfo,
+          // Estadísticas del cliente individual
+          totalSales: data.salesCount,
+          totalAmount: data.totalSales,
+          averageSale: data.averageSale,
+          clientsCount: 1
+        });
+      } else {
+        setWeeklyData(data.total);
       }
-      const data = await response.json();
-      // Si es por cliente, la respuesta puede ser diferente, ajusta según tu backend
-      setWeeklyData(
-        clientId ? { clients: [data], weekInfo: data.weekInfo } : data.total
-      );
     } catch (error) {
       console.error("Error:", error);
       setError(error.message);
@@ -107,15 +116,21 @@ const SheetsWeeklySales = () => {
   };
 
   // Filtrar clientes basado en el término de búsqueda y que tengan datos válidos
-  const filteredClients =
-    (weeklyData?.clients?.filter(
+  const filteredClients = (
+    weeklyData?.clients?.filter(
       (client) =>
-        (client.clientName?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
-        (client.clientPhone || "").includes(searchTerm)
-    ) || []).filter(
-      (client) =>
-        client && (client.clientName || client.clientPhone || client.totalSales || client.salesCount)
-    );
+        (client.clientName?.toLowerCase() || "").includes(
+          searchTerm.toLowerCase()
+        ) || (client.clientPhone || "").includes(searchTerm)
+    ) || []
+  ).filter(
+    (client) =>
+      client &&
+      (client.clientName ||
+        client.clientPhone ||
+        client.totalSales ||
+        client.salesCount)
+  );
 
   if (loading) {
     return <Loader />;
@@ -315,7 +330,9 @@ const SheetsWeeklySales = () => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-gray-900">
-                          {client.lastSaleDate ? formatDate(client.lastSaleDate) : "-"}
+                          {client.lastSaleDate
+                            ? formatDate(client.lastSaleDate)
+                            : "-"}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
@@ -368,7 +385,10 @@ const SheetsWeeklySales = () => {
                 })
               ) : (
                 <tr>
-                  <td colSpan="6" className="px-6 py-8 text-center text-gray-500">
+                  <td
+                    colSpan="6"
+                    className="px-6 py-8 text-center text-gray-500"
+                  >
                     No hay ventas actualmente
                   </td>
                 </tr>

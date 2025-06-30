@@ -61,7 +61,7 @@ function App() {
               element={<SalesWeeklyByClient />}
             />
             <Route path="/dashboard/sales" element={<Sales />} />
-            {/* <Route path="/dashboard/sales/:uid" element={<SalesForSeller />} /> */}
+            <Route path="/dashboard/sales/:uid" element={<SalesForSeller />} />
             <Route
               path="/dashboard/sales/weekly-sales/:clientId"
               element={<WeeklySales />}

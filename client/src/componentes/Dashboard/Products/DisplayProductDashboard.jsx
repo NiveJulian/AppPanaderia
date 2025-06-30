@@ -289,7 +289,6 @@ const DisplayProductDashboard = ({ products, client, user }) => {
                         <button
                           onClick={() => handleDeleteProduct(product)}
                           disabled={deletingProduct === product.id}
-                          title={getDeleteButtonTooltip()}
                           className={`w-full text-white border border-gray-100 p-2 shadow-md rounded-md hover:shadow-xl active:translate-y-[1px] ${
                             deletingProduct === product.id
                               ? "bg-red-600 cursor-not-allowed opacity-75"

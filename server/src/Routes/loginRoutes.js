@@ -18,8 +18,6 @@ const { authMiddleware } = require("../Middleware/authMiddleware");
 
 loginRoutes.post("/third", authMiddleware, async (req, res) => {
   try {
-    // El usuario ya está verificado y autorizado por el middleware
-    const { uid, email, name } = req.user;
     let user = await loginWithFirebase(req.headers.authorization.split(" ")[1]);
     res.status(200).json({
       message: "Authentication successful",
@@ -35,9 +33,7 @@ loginRoutes.post("/email", async (req, res) => {
     const { token } = req.body;
     const decodedToken = await verifyToken(token);
     const email = decodedToken.email;
-
-    const authClient = await authorize();
-    const sellerData = await getUserByEmail(authClient, email);
+    const sellerData = await getUserByEmail(email);
 
     if (sellerData) {
       res.status(200).json({

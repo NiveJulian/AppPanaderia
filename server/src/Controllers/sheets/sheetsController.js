@@ -1,6 +1,5 @@
 require("dotenv").config();
-const { PrismaClient } = require("../../generated/prisma/client");
-const prisma = new PrismaClient();
+const prisma = require("../../lib/prisma");
 const moment = require("moment");
 
 async function registerSaleDashboard(data) {

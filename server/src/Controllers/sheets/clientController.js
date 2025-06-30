@@ -1,5 +1,4 @@
-const { PrismaClient } = require('../../generated/prisma/client');
-const prisma = new PrismaClient();
+const prisma = require('../../lib/prisma');
 
 // Crear un nuevo cliente
 async function createClient(clientData) {

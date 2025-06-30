@@ -17,7 +17,7 @@ server.use(
   cors({
     origin: [
       "http://localhost:5173",
-      // "https://server-espigadeoro.vercel.app",
+      "https://server-espigadeoro.vercel.app",
       "https://espigadeoro.vercel.app"
     ],
     credentials: true,

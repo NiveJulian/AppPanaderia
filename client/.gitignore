@@ -23,6 +23,3 @@ dist-ssr
 *.sln
 *.sw?
 .env
-
-./src/api/axiosConfig.js
-./src/redux/action/rutaBack.js

@@ -36,7 +36,6 @@ const DisplayProductDashboard = ({ products, client, user }) => {
   const { id } = useParams();
   const dispatch = useDispatch();
 
-
   const toggleModal = () => {
     setActiveForm(!activeForm);
   };
@@ -167,14 +166,8 @@ const DisplayProductDashboard = ({ products, client, user }) => {
       return;
     }
 
-    const availableStock = product.stock;
-
     if (action === "increase") {
-      if (item.cantidad < availableStock) {
-        dispatch(incrementQuantity(item.id));
-      } else {
-        toast.error("No hay suficiente stock disponible");
-      }
+      dispatch(incrementQuantity(item.id));
     } else if (action === "decrease") {
       dispatch(decrementQuantity(item.id));
     }
@@ -254,7 +247,6 @@ const DisplayProductDashboard = ({ products, client, user }) => {
                   </button>
                 </div>
                 <div className="text-sm text-center mr-4">
-                  <div className="font-light text-gray-500"></div>
                   <Link
                     to={`/dashboard/sales/weekly-sales/${id}`}
                     className="font-semibold border p-2 border-gray-400 rounded-md bg-gray-400 text-white shadow-md active:translate-y-[1px]"

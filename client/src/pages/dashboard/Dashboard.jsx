@@ -3,7 +3,6 @@ import { Layout } from "../../componentes/Dashboard/Layout/Layout";
 import { useEffect, useState } from "react";
 import {
   getClientByUserID,
-  getClients,
 } from "../../redux/actions/clientActions";
 import { Link, useParams } from "react-router-dom";
 import TabCreateClient from "../../componentes/Dashboard/Popup/TabCreateClient";
@@ -28,7 +27,7 @@ const Dashboard = () => {
   return (
     <Layout isAuth={isAuth}>
       {activeForm && (
-        <TabCreateClient uid={uid} isOpen={activeForm} onClose={toggleModal} />
+        <TabCreateClient uid={user.uid} isOpen={activeForm} onClose={toggleModal} />
       )}
       <div className="flex justify-between items-center">
         <h1 className="text-xl text-white">Panel de control</h1>

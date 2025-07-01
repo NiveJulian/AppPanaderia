@@ -63,7 +63,7 @@ export const createClient = (data) => async (dispatch) => {
         type: CREATE_CLIENT,
         payload: response,
       });
-      dispatch(getClientByUserID(data.userId));
+      window.location.reload();
     }
   } catch (error) {
     console.log({ errorCreateClient: error.message });

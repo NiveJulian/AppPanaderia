@@ -1,4 +1,9 @@
-import { ALL_CLIENTS, GET_CLIENT_BY_ID, GET_CLIENT_BY_USER_ID, GET_SALES_WEEKLY_BY_CLIENT_ID } from "../actions/clientActions";
+import {
+  ALL_CLIENTS,
+  GET_CLIENT_BY_ID,
+  GET_CLIENT_BY_USER_ID,
+  GET_SALES_WEEKLY_BY_CLIENT_ID,
+} from "../actions/clientActions";
 
 const initialState = {
   clientes: [],
@@ -18,6 +23,7 @@ const clientReducer = (state = initialState, action) => {
     case GET_CLIENT_BY_USER_ID:
       return {
         ...state,
+        clientes: Array.isArray(payload) ? payload : [],
         clientsForUsers: Array.isArray(payload) ? payload : [],
       };
     case GET_CLIENT_BY_ID:
@@ -30,7 +36,7 @@ const clientReducer = (state = initialState, action) => {
         ...state,
         clientes: payload,
       };
-      default:
+    default:
       return state;
   }
 };

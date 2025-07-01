@@ -100,7 +100,7 @@ async function getSaleDataUnitiInfo(id) {
     });
 
     if (sales.length === 0) {
-      throw new Error("Ventas no encontradas");
+      return { sales: [], message: "No hay ventas asociadas a este usuario." };
     }
 
     return sales.map((sale) => ({
@@ -295,7 +295,7 @@ async function getWeeklyAllSalesByClient(clientId) {
     currentEndDate.setHours(23, 59, 59, 999);
 
     // Filtrar ventas de la semana actual
-    const weeklySales = sales.filter(sale => {
+    const weeklySales = sales.filter((sale) => {
       const saleDate = new Date(sale.date);
       return saleDate >= currentStartDate && saleDate <= currentEndDate;
     });
@@ -359,9 +359,7 @@ async function getWeeklyAllSalesByClient(clientId) {
         !clientData.lastSaleDate ||
         sale.date > new Date(clientData.lastSaleDate)
       ) {
-        clientData.lastSaleDate = sale.date
-          .toISOString()
-          .split("T")[0];
+        clientData.lastSaleDate = sale.date.toISOString().split("T")[0];
       }
     });
 
@@ -450,8 +448,6 @@ async function getWeeklySalesByClient() {
         message: "No se encontraron ventas en esta semana",
       };
     }
-
-    // Agrupar ventas por cliente
     const weeklySalesByClient = {};
 
     sales.forEach((sale) => {
@@ -507,11 +503,11 @@ async function getWeeklySalesByClient() {
       totalAmount: client.totalSales, // Para mantener compatibilidad
     }));
 
-    // Calcular totales generales
     const totalAmount = clientsData.reduce(
       (sum, client) => sum + client.totalSales,
       0
     );
+
     const totalSales = clientsData.reduce(
       (sum, client) => sum + client.salesCount,
       0
@@ -551,7 +547,9 @@ async function getWeeklySalesByUser(uid) {
 
     const currentEndDate = new Date(currentStartDate);
     currentEndDate.setDate(currentStartDate.getDate() + 6);
+    currentEndDate.setHours(23, 59, 59, 999);
 
+    // Obtener todas las ventas de la semana actual
     const sales = await prisma.sale.findMany({
       where: {
         userId: uid,
@@ -571,26 +569,119 @@ async function getWeeklySalesByUser(uid) {
             phone: true,
           },
         },
+        product: {
+          select: {
+            id: true,
+            name: true,
+            price: true,
+          },
+        },
+      },
+      orderBy: {
+        date: "desc",
       },
     });
 
-    // Agrupar ventas por cliente
+    if (sales.length === 0) {
+      return {
+        weekInfo: {
+          weekStart: currentStartDate.toISOString().split("T")[0],
+          weekEnd: currentEndDate.toISOString().split("T")[0],
+          weekNumber: Math.ceil(
+            (currentStartDate.getTime() -
+              new Date(currentStartDate.getFullYear(), 0, 1).getTime()) /
+              (7 * 24 * 60 * 60 * 1000)
+          ),
+        },
+        totalSales: 0,
+        totalAmount: 0,
+        clients: [],
+        message: "No se encontraron ventas en esta semana",
+      };
+    }
+    
     const weeklySalesByClient = {};
 
     sales.forEach((sale) => {
       const clientId = sale.clientId;
       if (!weeklySalesByClient[clientId]) {
         weeklySalesByClient[clientId] = {
-          ...sale.client,
+          clientId: sale.client.id,
+          clientName: sale.client.name,
+          clientPhone: sale.client.phone || "",
           weekStart: currentStartDate.toISOString().split("T")[0],
           weekEnd: currentEndDate.toISOString().split("T")[0],
           totalSales: 0,
+          totalAmount: 0,
+          salesCount: 0,
+          averageSale: 0,
+          products: [],
+          lastSaleDate: null,
+          paymentMethods: new Set(),
         };
       }
+
       weeklySalesByClient[clientId].totalSales += sale.total;
+      weeklySalesByClient[clientId].salesCount += 1;
+      weeklySalesByClient[clientId].paymentMethods.add(sale.payment);
+
+      // Agregar información del producto
+      weeklySalesByClient[clientId].products.push({
+        productId: sale.product.id,
+        productName: sale.product.name,
+        quantity: sale.quantity,
+        price: sale.product.price,
+        subtotal: sale.subtotal,
+        saleDate: sale.date.toISOString().split("T")[0],
+        saleTime: sale.time,
+      });
+
+      // Actualizar fecha de última venta
+      if (
+        !weeklySalesByClient[clientId].lastSaleDate ||
+        sale.date > new Date(weeklySalesByClient[clientId].lastSaleDate)
+      ) {
+        weeklySalesByClient[clientId].lastSaleDate = sale.date
+          .toISOString()
+          .split("T")[0];
+      }
     });
 
-    return Object.values(weeklySalesByClient);
+    // Calcular promedios y convertir Sets a Arrays
+    const clientsData = Object.values(weeklySalesByClient).map((client) => ({
+      ...client,
+      averageSale: client.totalSales / client.salesCount,
+      paymentMethods: Array.from(client.paymentMethods),
+      totalAmount: client.totalSales, // Para mantener compatibilidad
+    }));
+
+    const totalAmount = clientsData.reduce(
+      (sum, client) => sum + client.totalSales,
+      0
+    );
+
+    const totalSales = clientsData.reduce(
+      (sum, client) => sum + client.salesCount,
+      0
+    );
+
+    return {
+      weekInfo: {
+        weekStart: currentStartDate.toISOString().split("T")[0],
+        weekEnd: currentEndDate.toISOString().split("T")[0],
+        weekNumber: Math.ceil(
+          (currentStartDate.getTime() -
+            new Date(currentStartDate.getFullYear(), 0, 1).getTime()) /
+            (7 * 24 * 60 * 60 * 1000)
+        ),
+        totalDays: 7,
+      },
+      totalSales: totalSales,
+      totalAmount: totalAmount,
+      averageSale: totalSales > 0 ? totalAmount / totalSales : 0,
+      clientsCount: clientsData.length,
+      clients: clientsData.sort((a, b) => b.totalSales - a.totalSales), // Ordenar por total de ventas descendente
+    };
   } catch (error) {
     console.error({ error: error.message });
     throw new Error("Error retrieving weekly sales data");

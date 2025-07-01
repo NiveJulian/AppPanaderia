@@ -26,6 +26,7 @@ const {
   getProductByClientID,
   decreaseStock,
   checkProductSales,
+  getProductsByUserClients,
 } = require("../Controllers/sheets/productController.js");
 
 sheetsRouter.get("/data/client/:id", async (req, res) => {
@@ -209,23 +210,24 @@ sheetsRouter.get("/sales/weekly/user/:uid", async (req, res) => {
   try {
     const uid = req.params.uid;
     const weeklySales = await getWeeklySalesByUser(uid);
-    res.json(weeklySales);
+    res.status(200).json(weeklySales);
   } catch (error) {
     console.log({ error: error.message });
     res.status(500).send(error.message);
   }
 });
 
-sheetsRouter.get("/sales/weekly", async (req, res) => {
+sheetsRouter.get("/sale/weekly", async (req, res) => {
   try {
     const weeklySalesTotal = await getWeeklySalesByClient();
+
     if (!weeklySalesTotal) {
       return res
         .status(404)
         .json({ error: "No se encontraron ventas en la semana" });
     }
 
-    res.status(200).json({ total: weeklySalesTotal });
+    res.status(200).json(weeklySalesTotal);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -235,7 +237,7 @@ sheetsRouter.get("/sales/weekly/client/:clientId", async (req, res) => {
   try {
     const clientId = req.params.clientId;
     const weeklySales = await getWeeklyAllSalesByClient(clientId);
-    res.json(weeklySales);
+    res.status(200).json(weeklySales);
   } catch (error) {
     console.log({ error: error.message });
     res.status(500).send(error.message);
@@ -336,6 +338,16 @@ sheetsRouter.get("/product/:id/sales-check", async (req, res) => {
     res.json(result);
   } catch (error) {
     console.log({ error: error.message });
+    res.status(500).json({ error: error.message });
+  }
+});
+
+sheetsRouter.get("/products/user/:userId", async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const products = await getProductsByUserClients(userId);
+    res.json(products);
+  } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });

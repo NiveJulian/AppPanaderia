@@ -13,6 +13,7 @@ import Loader from "../../Loader/Loader";
 import ClientSalesModal from "./ClientSalesModal";
 import { useParams } from "react-router-dom";
 import instance from "../../../api/axiosConfig";
+import getUserFromSessionStorage from "../../getSession";
 
 const SheetsWeeklySales = () => {
   const [weeklyData, setWeeklyData] = useState(null);
@@ -37,24 +38,25 @@ const SheetsWeeklySales = () => {
           import.meta.env.VITE_API_URL
         }/api/sheets/sales/weekly/client/${clientId}`;
       } else {
-        url = `${import.meta.env.VITE_API_URL}/api/sheets/sales/weekly`;
+        const user = getUserFromSessionStorage();
+        url = `${import.meta.env.VITE_API_URL}/api/sheets/sales/weekly/user/${
+          user.uid
+        }`;
       }
       const response = await instance.get(url);
 
       const data = response.data;
-      // Si es por cliente, usar los datos del cliente directamente
       if (clientId) {
         setWeeklyData({
           clients: [data],
           weekInfo: data.weekInfo,
-          // Estadísticas del cliente individual
           totalSales: data.salesCount,
           totalAmount: data.totalSales,
           averageSale: data.averageSale,
-          clientsCount: 1
+          clientsCount: 1,
         });
       } else {
-        setWeeklyData(data.total);
+        setWeeklyData(data);
       }
     } catch (error) {
       console.error("Error:", error);

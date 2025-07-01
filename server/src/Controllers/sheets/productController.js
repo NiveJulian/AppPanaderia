@@ -199,7 +199,7 @@ async function createProductoByClientId(data, clientId) {
         name: nombre,
         stock: parseInt(cantidad) || 0,
         price: parseFloat(precio) || 0,
-        clientId: clientId,
+        clientId: clientId && clientId !== "" ? clientId : null,
         published: true,
       },
       include: {
@@ -320,6 +320,42 @@ async function checkProductSales(id) {
   }
 }
 
+async function getProductsByUserClients(userId) {
+  try {
+    // 1. Buscar todos los clientes creados por el usuario
+    const clients = await prisma.client.findMany({
+      where: { userId, deleted: false },
+      select: { id: true }
+    });
+    const clientIds = clients.map(c => c.id);
+
+    // 2. Buscar todos los productos de esos clientes
+    const products = await prisma.product.findMany({
+      where: {
+        clientId: { in: clientIds },
+        deleted: false
+      },
+      include: {
+        client: { select: { id: true, name: true } }
+      }
+    });
+
+    // 3. Formatear la respuesta
+    return products.map(product => ({
+      id: product.id,
+      nombre: product.name,
+      stock: product.stock,
+      precio: product.price,
+      cliente: product.client ? product.client.name : "",
+      clienteId: product.clientId,
+      publicado: product.published
+    }));
+  } catch (error) {
+    console.log({ error: error.message });
+    throw new Error("Error obteniendo productos de los clientes del usuario");
+  }
+}
+
 module.exports = {
   getSheetData,
   getSheetDataById,
@@ -330,4 +366,5 @@ module.exports = {
   getProductByClientID,
   decreaseStock,
   checkProductSales,
+  getProductsByUserClients,
 };

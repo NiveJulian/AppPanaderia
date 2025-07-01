@@ -11,7 +11,7 @@ import TabCreateClient from "../../componentes/Dashboard/Popup/TabCreateClient";
 const Dashboard = () => {
   const isAuth = useSelector((state) => state.auth.isAuth);
   const clientsForUsers = useSelector((state) => state.client.clientsForUsers);
-  const { uid } = useParams();
+  // const { uid } = useParams();
   const user = useSelector((state) => state.auth.user);
   const dispatch = useDispatch();
 
@@ -22,8 +22,8 @@ const Dashboard = () => {
   };
 
   useEffect(() => {
-    dispatch(getClientByUserID(uid));
-  }, [dispatch, uid]);
+    dispatch(getClientByUserID(user.uid));
+  }, [dispatch]);
 
   return (
     <Layout isAuth={isAuth}>

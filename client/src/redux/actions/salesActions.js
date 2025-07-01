@@ -1,7 +1,6 @@
 import toast from "react-hot-toast";
 import instance from "../../api/axiosConfig";
 import { sendEmailChangeStateOrder } from "./emailActions";
-import { fetchSheetsByClient } from "./productActions";
 
 export const GET_SALES = "GET_SALES";
 export const GET_SALE_BY_ID = "GET_SALE_BY_ID";
@@ -159,9 +158,6 @@ export const createSaleDashboard = (data) => async (dispatch) => {
     if (res.status === 200) {
       toast.success("Venta creada exitosamente...");
 
-      dispatch(getSales());
-      dispatch(fetchSheetsByClient(data.idCliente));
-
       dispatch({
         type: CREATED_SALE_DASHBOARD,
         payload: res,
@@ -175,24 +171,27 @@ export const createSaleDashboard = (data) => async (dispatch) => {
 
 export const generateWeeklySalesPDF = (clientData) => async () => {
   try {
-    const response = await fetch(`${import.meta.env.VITE_API_URL}/api/ticket/generate-weekly`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
-      },
-      body: JSON.stringify(clientData),
-    });
+    const response = await fetch(
+      `${import.meta.env.VITE_API_URL}/api/ticket/generate-weekly`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("authToken")}`,
+        },
+        body: JSON.stringify(clientData),
+      }
+    );
 
     if (!response.ok) {
-      throw new Error('Error al generar el PDF');
+      throw new Error("Error al generar el PDF");
     }
 
     // Crear un blob del PDF y descargarlo
     const blob = await response.blob();
     const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.style.display = 'none';
+    const a = document.createElement("a");
+    a.style.display = "none";
     a.href = url;
     a.download = `ventas_semanales_${clientData.clientName}.pdf`;
     document.body.appendChild(a);
@@ -200,10 +199,10 @@ export const generateWeeklySalesPDF = (clientData) => async () => {
     window.URL.revokeObjectURL(url);
     document.body.removeChild(a);
 
-    toast.success('PDF generado exitosamente');
+    toast.success("PDF generado exitosamente");
   } catch (error) {
-    console.error('Error generating PDF:', error);
-    toast.error('Error al generar el PDF');
+    console.error("Error generating PDF:", error);
+    toast.error("Error al generar el PDF");
   }
 };
 

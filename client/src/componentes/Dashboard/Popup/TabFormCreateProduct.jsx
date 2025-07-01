@@ -7,11 +7,14 @@ import {
   createProductByClientId,
   updateRow,
 } from "../../../redux/actions/productActions";
-import { getClients } from "../../../redux/actions/clientActions";
+import { getClientByUserID } from "../../../redux/actions/clientActions";
+import PropTypes from "prop-types";
 
-export default function TabFormCreateProduct({ isOpen, onClose, product }) {
+export default function TabFormCreateProduct({ isOpen, onClose, product, onProductCreated }) {
   const dispatch = useDispatch();
   const { clientes } = useSelector((state) => state.client);
+  const user = useSelector((state) => state.auth.user);
+
 
   const [formData, setFormData] = useState({
     nombre: "",
@@ -29,10 +32,10 @@ export default function TabFormCreateProduct({ isOpen, onClose, product }) {
   }, [memoizedErrors]);
 
   useEffect(() => {
-    if (isOpen) {
-      dispatch(getClients());
+    if (isOpen && user && user.uid) {
+      dispatch(getClientByUserID(user.uid));
     }
-  }, [isOpen, dispatch]);
+  }, [isOpen, dispatch, user]);
 
   useEffect(() => {
     if (product) {
@@ -78,10 +81,15 @@ export default function TabFormCreateProduct({ isOpen, onClose, product }) {
             nombre: formData.nombre,
             stock: formData.cantidad,
             precio: formData.precio,
+            clientId: formData.clientId || null,
           };
-          dispatch(updateRow(updatedRows));
+          dispatch(updateRow(updatedRows)).then(() => {
+            if (onProductCreated) onProductCreated();
+          });
         } else if (formData.clientId && formData.clientId !== "") {
-          dispatch(createProductByClientId(formData.clientId, newRow));
+          dispatch(createProductByClientId(formData.clientId, newRow)).then(() => {
+            if (onProductCreated) onProductCreated();
+          });
         } else {
           dispatch(addSheetRow(newRow));
         }
@@ -130,30 +138,28 @@ export default function TabFormCreateProduct({ isOpen, onClose, product }) {
           )}
         </div>
 
-        {!product && (
-          <div className="mt-2">
-            <label htmlFor="clientId">Cliente (opcional)</label>
-            <select
-              className={`bg-white w-full p-2 text-center mt-2 rounded-md border ${
-                errors.clientId ? "border-red-500" : "border-gray-400"
-              }`}
-              id="clientId"
-              name="clientId"
-              value={formData.clientId}
-              onChange={handleChange}
-            >
-              <option value="">Seleccionar cliente (opcional)</option>
-              {clientes.map((cliente) => (
-                <option key={cliente.id} value={cliente.id}>
-                  {cliente.name}
-                </option>
-              ))}
-            </select>
-            {errors.clientId && (
-              <p className="text-red-500 text-xs">{errors.clientId}</p>
-            )}
-          </div>
-        )}
+        <div className="mt-2">
+          <label htmlFor="clientId">Cliente (opcional)</label>
+          <select
+            className={`bg-white w-full p-2 text-center mt-2 rounded-md border ${
+              errors.clientId ? "border-red-500" : "border-gray-400"
+            }`}
+            id="clientId"
+            name="clientId"
+            value={formData.clientId}
+            onChange={handleChange}
+          >
+            <option value="">Seleccionar cliente (opcional)</option>
+            {clientes.map((cliente) => (
+              <option key={cliente.id} value={cliente.id}>
+                {cliente.name}
+              </option>
+            ))}
+          </select>
+          {errors.clientId && (
+            <p className="text-red-500 text-xs">{errors.clientId}</p>
+          )}
+        </div>
 
         <div className="mt-2">
           <label htmlFor="cantidad">Cantidad</label>
@@ -201,3 +207,10 @@ export default function TabFormCreateProduct({ isOpen, onClose, product }) {
     </div>
   );
 }
+
+TabFormCreateProduct.propTypes = {
+  isOpen: PropTypes.bool.isRequired,
+  onClose: PropTypes.func.isRequired,
+  product: PropTypes.object,
+  onProductCreated: PropTypes.func,
+};

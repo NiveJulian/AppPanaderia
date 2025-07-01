@@ -1,12 +1,13 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Layout } from "../../componentes/Dashboard/Layout/Layout";
 import SheetsData from "../../componentes/Dashboard/Sheets/SheetsData";
 import TabFormCreateProduct from "../../componentes/Dashboard/Popup/TabFormCreateProduct";
 
-import { useDispatch, useSelector } from "react-redux";
-import { fetchSheets } from "../../redux/actions/productActions";
+import { useSelector } from "react-redux";
 import TabDeleteRowButton from "../../componentes/Dashboard/Popup/TabDeleteRowButton";
 import TabConfirmPublicProduct from "../../componentes/Dashboard/Popup/TabConfirmPublicProduct";
+import getUserFromSessionStorage from "../../componentes/getSession";
+import instance from "../../api/axiosConfig";
 
 const Products = () => {
   const [activeForm, setActiveForm] = useState(false);
@@ -20,16 +21,21 @@ const Products = () => {
   const [filteredData, setFilteredData] = useState([]);
 
   const isAuth = useSelector((state) => state.auth.isAuth);
-  const dispatch = useDispatch();
+
   const data = useSelector((state) => state.sheets.sheetsData);
 
   useEffect(() => {
-    dispatch(fetchSheets());
-  }, [dispatch]);
+    // Obtener usuario autenticado desde sessionStorage
+    fetchProducts();
+  }, []);
 
-  useEffect(() => {
-    setFilteredData(data);
-  }, [data]);
+  const fetchProducts = async () => {
+    const user = getUserFromSessionStorage();
+    const response = await instance.get(
+      `/api/sheets/products/user/${user.uid}`
+    );
+    setFilteredData(response.data);
+  };
 
   const toggleModal = (product) => {
     setSelectedProduct(product);
@@ -104,6 +110,7 @@ const Products = () => {
           isOpen={activeForm}
           onClose={toggleModal}
           product={selectedProduct}
+          onProductCreated={fetchProducts}
         />
       )}
       {deleteRowIndex !== null && (
@@ -113,7 +120,7 @@ const Products = () => {
         />
       )}
       {activePublicProd !== null && (
-        <TabConfirmPublicProduct 
+        <TabConfirmPublicProduct
           id={activePublicProd}
           onClose={() => toggleActiveModal(null)}
         />

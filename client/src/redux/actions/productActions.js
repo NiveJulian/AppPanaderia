@@ -136,7 +136,10 @@ export const deleteSheetRow = (rowIndex) => async (dispatch) => {
   } catch (error) {
     console.log(error);
     // Propagar el error para que el componente pueda manejarlo
-    const errorMessage = error.response?.data?.error || error.message || "Error al eliminar el producto";
+    const errorMessage =
+      error.response?.data?.error ||
+      error.message ||
+      "Error al eliminar el producto";
     throw new Error(errorMessage);
   }
 };
@@ -191,12 +194,11 @@ export const createProductByClientId = (id, data) => async (dispatch) => {
 
     if (res.status === 200) {
       toast.success("Producto creado exitosamente");
+      // dispatch(fetchSheetsByClient(id));
       dispatch({
         type: CREATE_PRODUCT_BY_CLIENT_ID,
         payload: res.data,
       });
-
-      dispatch(fetchSheets());
     }
   } catch (error) {
     console.log(error);
@@ -266,11 +268,14 @@ export const addCashFlowEntry = (entryData) => async (dispatch) => {
 export const checkProductSales = (productId) => async () => {
   const token = localStorage.getItem("authToken");
   try {
-    const res = await instance.get(`/api/sheets/product/${productId}/sales-check`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+    const res = await instance.get(
+      `/api/sheets/product/${productId}/sales-check`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
     return res.data;
   } catch (error) {
     console.log(error);

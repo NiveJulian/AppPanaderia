@@ -30,10 +30,12 @@ const DisplayProductDashboard = ({ products, client, user }) => {
   const [activeForm, setActiveForm] = useState(false);
   const [activeModalProduct, setActiveModalProduct] = useState(false);
   const [deletingProduct, setDeletingProduct] = useState(null);
-  const navigate = useNavigate();
-
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deletingClient, setDeletingClient] = useState(false);
+  const navigate = useNavigate();
+  const { id } = useParams();
+  const dispatch = useDispatch();
+
 
   const toggleModal = () => {
     setActiveForm(!activeForm);
@@ -42,9 +44,6 @@ const DisplayProductDashboard = ({ products, client, user }) => {
   const toggleModalProduct = () => {
     setActiveModalProduct(!activeModalProduct);
   };
-
-  const { id } = useParams();
-  const dispatch = useDispatch();
 
   const calculateTotal = () => {
     const total = cartItems.reduce((acc, product) => {

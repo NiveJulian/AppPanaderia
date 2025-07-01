@@ -34,12 +34,21 @@ const SheetsData = ({
                     <td>{row.nombre}</td>
                     <td>{row.stock}</td>
                     <td>{row.precio}</td>
-                    <td>{row?.client ? row.client : ""}</td>
+                    <td>{row?.cliente ? row.cliente : ""}</td>
                     <td className="gap-2">
                       <button
                         title="Editar"
                         className="hover:text-green-500"
-                        onClick={() => toggleModal(row)}
+                        onClick={() => {
+                          const normalizedRow = {
+                            id: row.id,
+                            nombre: row.nombre ?? row.name ?? "",
+                            stock: row.stock ?? row.cantidad ?? "",
+                            precio: row.precio ?? row.price ?? "",
+                            clientId: row.clientId ?? row.clienteId ?? "",
+                          };
+                          toggleModal(normalizedRow);
+                        }}
                       >
                         <svg
                           xmlns="http://www.w3.org/2000/svg"

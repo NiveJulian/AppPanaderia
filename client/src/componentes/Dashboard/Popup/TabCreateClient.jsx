@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useDispatch } from "react-redux";
 import toast from "react-hot-toast";
 import validationClienteForm from "./validationClienteForm";
@@ -15,6 +15,7 @@ export default function TabCreateClient({ isOpen, onClose, cliente, uid }) {
     phone: "",
   });
   const [errors, setErrors] = useState({});
+  
   const memoizedErrors = useMemo(() => {
     return validationClienteForm(formData);
   }, [formData]);
@@ -31,19 +32,23 @@ export default function TabCreateClient({ isOpen, onClose, cliente, uid }) {
         address: cliente.direccion || "",
         phone: cliente.celular || "",
       });
+    } else {
+      setFormData({
+        name: "",
+        address: "",
+        phone: "",
+      });
     }
   }, [cliente]);
 
-  if (!isOpen) return null;
-
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
+  const handleChange = useCallback((e) => {
+    setFormData(prev => ({
+      ...prev,
       [e.target.name]: e.target.value,
-    });
-  };
+    }));
+  }, []);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = useCallback((e) => {
     e.preventDefault();
     if (Object.keys(memoizedErrors).length === 0) {
       try {
@@ -66,13 +71,23 @@ export default function TabCreateClient({ isOpen, onClose, cliente, uid }) {
           dispatch(createClient(newRow));
         }
 
-        setFormData({});
+        setFormData({
+          name: "",
+          address: "",
+          phone: "",
+        });
         onClose();
       } catch (error) {
-        toast.error("Error al crear el nuevo producto");
+        toast.error("Error al crear el cliente");
       }
     }
-  };
+  }, [cliente, formData, memoizedErrors, dispatch, uid, onClose]);
+
+  const handleClose = useCallback(() => {
+    onClose();
+  }, [onClose]);
+
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-800 bg-opacity-50">
@@ -81,7 +96,8 @@ export default function TabCreateClient({ isOpen, onClose, cliente, uid }) {
         onSubmit={handleSubmit}
       >
         <button
-          onClick={onClose}
+          type="button"
+          onClick={handleClose}
           className="text-gray-400 flex text-3xl hover:text-gray-500"
         >
           &times;
@@ -141,7 +157,7 @@ export default function TabCreateClient({ isOpen, onClose, cliente, uid }) {
           type="submit"
           className="p-4 shadow-lg bg-blue-300 text-gray-900 rounded-md mt-2"
         >
-          Crear cliente
+          {cliente ? "Actualizar cliente" : "Crear cliente"}
         </button>
       </form>
     </div>

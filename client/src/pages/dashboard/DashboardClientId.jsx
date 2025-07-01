@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Layout } from "../../componentes/Dashboard/Layout/Layout";
 import { useDispatch, useSelector } from "react-redux";
 import DisplayProductDashboard from "../../componentes/Dashboard/Products/DisplayProductDashboard";
@@ -10,30 +10,44 @@ const DashboardClientId = () => {
   const isAuth = useSelector((state) => state.auth.isAuth);
   const product = useSelector((state) => state.sheets.sheetsData);
   const user = useSelector((state) => state.auth.user);
+  const client = useSelector((state) => state.client.client);
 
   const { id } = useParams();
   const dispatch = useDispatch();
-  const client = useSelector((state) => state.client.client);
   const navigate = useNavigate();
-
-  // const isEmpty = (obj) => Object.keys(obj).length === 0;
-
-  useEffect(() => {
-    dispatch(fetchSheetsByClient(user.uid));
-    dispatch(getClientById(id));
-  }, [dispatch, id, user.uid]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Si client es null, undefined, o un objeto vacío, redirige
-    if (!client || Object.keys(client).length === 0) {
-      if (user && user.uid) {
+    if (user?.uid && id) {
+      setIsLoading(true);
+      dispatch(fetchSheetsByClient(user.uid));
+      dispatch(getClientById(id));
+    }
+  }, [dispatch, id, user?.uid]);
+
+  useEffect(() => {
+    // Solo redirigir si no está cargando y no hay cliente
+    if (!isLoading && (!client || Object.keys(client).length === 0)) {
+      if (user?.uid) {
         navigate(`/dashboard/${user.uid}`);
       } else {
         navigate("/error");
       }
+    } else if (client && Object.keys(client).length > 0) {
+      setIsLoading(false);
     }
-    // Si usas soft delete, puedes validar: if (client.deletedAt) { ... }
-  }, [client, navigate, user]);
+  }, [client, navigate, user?.uid, isLoading]);
+
+  // Mostrar loading mientras se carga
+  if (isLoading) {
+    return (
+      <Layout isAuth={isAuth}>
+        <div className="flex justify-center items-center h-screen">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-white"></div>
+        </div>
+      </Layout>
+    );
+  }
 
   return (
     <Layout isAuth={isAuth}>

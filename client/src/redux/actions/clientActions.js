@@ -61,12 +61,14 @@ export const createClient = (data) => async (dispatch) => {
       toast.success("Cliente creado");
       dispatch({
         type: CREATE_CLIENT,
-        payload: response,
+        payload: response.data,
       });
-      window.location.reload();
+      // Recargar la lista de clientes después de crear uno nuevo
+      dispatch(getClientByUserID(data.userId));
     }
   } catch (error) {
     console.log({ errorCreateClient: error.message });
+    toast.error("Error al crear el cliente");
   }
 };
 

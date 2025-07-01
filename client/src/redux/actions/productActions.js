@@ -85,12 +85,12 @@ export const addSheetRow = (rowData) => async (dispatch) => {
         type: ADD_SHEET_ROW,
         payload: res.data,
       });
-      setTimeout(() => {
-        window.location.reload();
-      }, 1500);
+      // Recargar los productos después de crear uno nuevo
+      dispatch(fetchSheetsByClient(rowData.userId));
     }
   } catch (error) {
     console.log(error);
+    toast.error("Error al crear el producto");
   }
 };
 
@@ -103,12 +103,12 @@ export const updateRow = (rowData) => async (dispatch) => {
         type: UPDATE_SHEET_ROW,
         payload: res.data,
       });
-      setTimeout(() => {
-        window.location.reload();
-      }, 1500);
+      // Recargar los productos después de actualizar
+      dispatch(fetchSheetsByClient(rowData.userId));
     }
   } catch (error) {
     console.log(error);
+    toast.error("Error al actualizar el producto");
   }
 };
 

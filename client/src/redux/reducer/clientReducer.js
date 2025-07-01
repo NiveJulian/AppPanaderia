@@ -3,6 +3,9 @@ import {
   GET_CLIENT_BY_ID,
   GET_CLIENT_BY_USER_ID,
   GET_SALES_WEEKLY_BY_CLIENT_ID,
+  CREATE_CLIENT,
+  UPDATE_CLIENT,
+  DELETE_CLIENT,
 } from "../actions/clientActions";
 
 const initialState = {
@@ -35,6 +38,28 @@ const clientReducer = (state = initialState, action) => {
       return {
         ...state,
         clientes: payload,
+      };
+    case CREATE_CLIENT:
+      return {
+        ...state,
+        clientes: [...state.clientes, payload],
+        clientsForUsers: [...state.clientsForUsers, payload],
+      };
+    case UPDATE_CLIENT:
+      return {
+        ...state,
+        clientes: state.clientes.map(client => 
+          client.id === payload.id ? payload : client
+        ),
+        clientsForUsers: state.clientsForUsers.map(client => 
+          client.id === payload.id ? payload : client
+        ),
+      };
+    case DELETE_CLIENT:
+      return {
+        ...state,
+        clientes: state.clientes.filter(client => client.id !== payload.id),
+        clientsForUsers: state.clientsForUsers.filter(client => client.id !== payload.id),
       };
     default:
       return state;

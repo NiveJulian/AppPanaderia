@@ -18,7 +18,7 @@ const clientReducer = (state = initialState, action) => {
     case GET_CLIENT_BY_USER_ID:
       return {
         ...state,
-        clientsForUsers: payload,
+        clientsForUsers: Array.isArray(payload) ? payload : [],
       };
     case GET_CLIENT_BY_ID:
       return {

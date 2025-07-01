@@ -3,7 +3,6 @@ const prisma = require("../../lib/prisma");
 // Crear un nuevo cliente
 async function createClient(clientData) {
   try {
-    console.log(clientData);
     const { name, address, phone, userId } = clientData;
     const newClient = await prisma.client.create({
       data: {

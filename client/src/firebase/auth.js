@@ -5,7 +5,6 @@ import {
   signInWithPopup,
   signOut,
 } from "firebase/auth";
-import rutaBack from "../redux/actions/rutaBack";
 import { auth } from "./firebase.config";
 import store from "../redux/store";
 import {
@@ -22,7 +21,7 @@ export const doSignInWithGoogle = async () => {
     const result = await signInWithPopup(auth, provider);
     const token = await result.user.getIdToken();
 
-    const response = await fetch(`${rutaBack}/api/login/third`, {
+    const response = await fetch(`${import.meta.env.VITE_API_URL}/api/login/third`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -81,7 +80,7 @@ export const doSignInWithEmailAndPassword = async (email, password) => {
     const user = userCredential.user;
     const token = await user.getIdToken();
 
-    const response = await fetch(`${rutaBack}/api/login/email`, {
+    const response = await fetch(`${import.meta.env.VITE_API_URL}/api/login/email`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -172,7 +171,6 @@ export const createNewUser = async (newUser) => {
       email,
       password
     );
-    console.log(userCredential);
     const user = userCredential.user;
 
     let data = {

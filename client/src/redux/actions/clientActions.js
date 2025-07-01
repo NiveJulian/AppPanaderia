@@ -59,11 +59,11 @@ export const createClient = (data) => async (dispatch) => {
 
     if (response.status === 200) {
       toast.success("Cliente creado");
-      dispatch(getClientByUserID(data.uid));
       dispatch({
         type: CREATE_CLIENT,
         payload: response,
       });
+      dispatch(getClientByUserID(data.userId));
     }
   } catch (error) {
     console.log({ errorCreateClient: error.message });

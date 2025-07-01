@@ -52,7 +52,7 @@ export default function TabCreateClient({ isOpen, onClose, cliente, uid }) {
             name: formData.name,
             address: formData.address,
             phone: formData.phone,
-            uid,
+            userId: uid,
           };
 
           dispatch(updateClient(cliente.id, updateRow));
@@ -61,7 +61,7 @@ export default function TabCreateClient({ isOpen, onClose, cliente, uid }) {
             name: formData.name,
             address: formData.address,
             phone: formData.phone,
-            uid,
+            userId: uid,
           };
           dispatch(createClient(newRow));
         }

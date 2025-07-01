@@ -15,6 +15,7 @@ const {
   getWeeklySalesByUser,
   getSaleById,
   getWeeklyAllSalesByClient,
+  getMonthlySalesByClient,
 } = require("../Controllers/sheets/sheetsController.js");
 const {
   getSheetData,
@@ -29,10 +30,10 @@ const {
   getProductsByUserClients,
 } = require("../Controllers/sheets/productController.js");
 
-sheetsRouter.get("/data/client/:id", async (req, res) => {
+sheetsRouter.get("/data/client/:userId", async (req, res) => {
   try {
-    const { id } = req.params;
-    const data = await getProductByClientID(id);
+    const { userId } = req.params;
+    const data = await getProductByClientID(userId);
     res.json(data);
   } catch (error) {
     console.log({ error: error.message });
@@ -347,6 +348,16 @@ sheetsRouter.get("/products/user/:userId", async (req, res) => {
     const { userId } = req.params;
     const products = await getProductsByUserClients(userId);
     res.json(products);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+sheetsRouter.get("/sales/monthly/client/:clientId/:year", async (req, res) => {
+  try {
+    const { clientId, year } = req.params;
+    const result = await getMonthlySalesByClient(clientId, year);
+    res.json(result);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

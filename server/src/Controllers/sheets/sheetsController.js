@@ -1201,6 +1201,41 @@ async function getSaleByUserId(uid) {
   }
 }
 
+async function getMonthlySalesByClient(clientId, year) {
+  try {
+    const sales = await prisma.sale.findMany({
+      where: {
+        clientId,
+        orderStatus: { not: "Anulado" },
+        date: {
+          gte: new Date(`${year}-01-01`),
+          lte: new Date(`${year}-12-31`),
+        },
+      },
+      orderBy: { date: "asc" },
+    });
+
+    // Agrupar por mes
+    const monthly = {};
+    sales.forEach(sale => {
+      const month = sale.date.getMonth() + 1; // 1-12
+      if (!monthly[month]) monthly[month] = [];
+      monthly[month].push(sale);
+    });
+
+    // Formatear respuesta
+    return Object.entries(monthly).map(([month, sales]) => ({
+      month: Number(month),
+      total: sales.reduce((sum, s) => sum + s.total, 0),
+      salesCount: sales.length,
+      sales,
+    }));
+  } catch (error) {
+    console.log({ error: error.message });
+    throw new Error("Error obteniendo ventas mensuales del cliente");
+  }
+}
+
 module.exports = {
   registerSaleDashboard,
   getSaleData,
@@ -1218,4 +1253,5 @@ module.exports = {
   putSaleChangeState,
   getWeeklyAllSalesByClient,
   getSaleById,
+  getMonthlySalesByClient,
 };

@@ -2,9 +2,7 @@ import { useEffect } from "react";
 import { Layout } from "../../componentes/Dashboard/Layout/Layout";
 import { useDispatch, useSelector } from "react-redux";
 import DisplayProductDashboard from "../../componentes/Dashboard/Products/DisplayProductDashboard";
-import {
-  fetchSheetsByClient,
-} from "../../redux/actions/productActions";
+import { fetchSheetsByClient } from "../../redux/actions/productActions";
 import { getClientById } from "../../redux/actions/clientActions";
 import { useParams, useNavigate } from "react-router-dom";
 
@@ -21,9 +19,9 @@ const DashboardClientId = () => {
   // const isEmpty = (obj) => Object.keys(obj).length === 0;
 
   useEffect(() => {
-    dispatch(fetchSheetsByClient(id));
+    dispatch(fetchSheetsByClient(user.uid));
     dispatch(getClientById(id));
-  }, [dispatch, id]);
+  }, [dispatch, id, user.uid]);
 
   useEffect(() => {
     // Si client es null, undefined, o un objeto vacío, redirige

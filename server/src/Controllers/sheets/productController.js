@@ -230,12 +230,13 @@ async function createProductoByClientId(data, clientId) {
   }
 }
 
-async function getProductByClientID(clientId) {
+async function getProductByClientID(userId) {
   try {
     const products = await prisma.product.findMany({
-      where: { clientId },
+      where: { deleted: false },
       include: {
         client: {
+          where: { userId },
           select: {
             id: true,
             name: true,
@@ -325,30 +326,30 @@ async function getProductsByUserClients(userId) {
     // 1. Buscar todos los clientes creados por el usuario
     const clients = await prisma.client.findMany({
       where: { userId, deleted: false },
-      select: { id: true }
+      select: { id: true },
     });
-    const clientIds = clients.map(c => c.id);
+    const clientIds = clients.map((c) => c.id);
 
     // 2. Buscar todos los productos de esos clientes
     const products = await prisma.product.findMany({
       where: {
         clientId: { in: clientIds },
-        deleted: false
+        deleted: false,
       },
       include: {
-        client: { select: { id: true, name: true } }
-      }
+        client: { select: { id: true, name: true } },
+      },
     });
 
     // 3. Formatear la respuesta
-    return products.map(product => ({
+    return products.map((product) => ({
       id: product.id,
       nombre: product.name,
       stock: product.stock,
       precio: product.price,
       cliente: product.client ? product.client.name : "",
       clienteId: product.clientId,
-      publicado: product.published
+      publicado: product.published,
     }));
   } catch (error) {
     console.log({ error: error.message });

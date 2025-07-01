@@ -132,20 +132,9 @@ export const getSales = () => async (dispatch) => {
     const res = await instance.get(`/api/sheets/sale`);
     const salesData = res.data;
 
-    // Filtrar las ventas para que solo haya una por cada ID
-    const uniqueSales = Object.values(
-      salesData.reduce((acc, sale) => {
-        acc[sale.id] = sale; // Si el ID ya existe, lo sobrescribe
-        return acc;
-      }, {})
-    );
-
-    // Invertir el orden para que la más reciente esté al principio
-    const reversedSales = uniqueSales.reverse();
-
     dispatch({
       type: GET_SALES,
-      payload: reversedSales,
+      payload: salesData,
     });
   } catch (error) {
     console.log(error);

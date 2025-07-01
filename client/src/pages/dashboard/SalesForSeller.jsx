@@ -57,7 +57,6 @@ const SalesForSeller = () => {
   useEffect(() => {
     if (isLoading) {
       dispatch(getSaleByUserID(uid));
-      dispatch(getSaleByWeeklyByUser(uid));
     }
   }, [uid, isLoading, dispatch]);
 
@@ -141,10 +140,7 @@ const SalesForSeller = () => {
           </div>
           <div className="lg:h-screen overflow-y-auto border border-gray-300 p-2 rounded-md">
             <div className="mt-2">
-              <SalesByClientList
-                saleInfo={sale}
-                salesWeekly={salesWeekly}
-              />
+              <SalesByClientList salesWeekly={searchedSales} />
             </div>
           </div>
         </div>

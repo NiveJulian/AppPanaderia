@@ -44,18 +44,13 @@ export const fetchSheets = () => async (dispatch) => {
   }
 };
 
-export const fetchSheetsByClient = (id) => async (dispatch) => {
-  const token = localStorage.getItem("authToken");
+export const fetchSheetsByClient = (userId) => async (dispatch) => {
   try {
-    const res = await instance.get(`/api/sheets/data/client/${id}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+    const res = await instance.get(`/api/sheets/data/client/${userId}`);
     if (res.status === 200) {
       dispatch({
         type: FETCH_SHEETS,
-        payload: res.data.products,
+        payload: res.data.products, 
       });
     }
   } catch (error) {

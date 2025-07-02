@@ -64,15 +64,15 @@ export const getSaleByUserID = (uid) => async (dispatch) => {
     const res = await instance.get(`/api/sheets/sales/${uid}`);
     if (res.status === 200) {
       const salesData = res.data;
-
+      // Asegurarse de que salesData sea un array
+      const safeSalesData = Array.isArray(salesData) ? salesData : [];
       // Filtrar las ventas para que solo haya una por cada ID
       const uniqueSales = Object.values(
-        salesData.reduce((acc, sale) => {
+        safeSalesData.reduce((acc, sale) => {
           acc[sale.id] = sale; // Si el ID ya existe, lo sobrescribe
           return acc;
         }, {})
       );
-
       // Invertir el orden para que la más reciente esté al principio
       const reversedSales = uniqueSales.reverse();
       dispatch({
@@ -197,11 +197,10 @@ export const generateWeeklySalesPDF = (clientData) => async () => {
 
 export const deleteSaleRow = (rowIndex) => async (dispatch) => {
   try {
-    const res = await instance.delete(`/api/sheets/sale/${rowIndex}`);
+    const res = await instance.delete(`/api/sheets/sale/permanent/${rowIndex}`);
     if (res.status === 200) {
-      toast.success("Eliminado exitosamente");
+      toast.success("Eliminado definitivamente");
       dispatch(getSales());
-
       dispatch({
         type: DELETE_SALE_ROW,
         payload: rowIndex,
@@ -210,6 +209,6 @@ export const deleteSaleRow = (rowIndex) => async (dispatch) => {
     }
   } catch (error) {
     console.log(error);
-    toast.error("Error al eliminar la venta");
+    toast.error("Error al eliminar la venta definitivamente");
   }
 };

@@ -3,7 +3,7 @@ import { Layout } from "../../componentes/Dashboard/Layout/Layout";
 import { useDispatch, useSelector } from "react-redux";
 import {
   getSaleByUserID,
-  getSaleByWeeklyByUser,
+  // getSaleByWeeklyByUser,
   getSaleChangeState,
   getSaleInfo,
 } from "../../redux/actions/salesActions";

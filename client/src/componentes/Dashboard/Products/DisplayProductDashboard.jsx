@@ -183,8 +183,15 @@ const DisplayProductDashboard = ({ products, client, user }) => {
   };
 
   const filteredProducts = products.filter((product) => {
+    // Mostrar productos globales o productos asignados a este cliente
+    const isGlobal = !product.clienteId;
+    const isForThisClient = product.clienteId === id;
+    console.log(isForThisClient);
     const lowerCaseSearchTerm = searchTerm?.toLowerCase();
-    return product?.nombre?.toLowerCase().includes(lowerCaseSearchTerm);
+    const matchesSearch = product?.nombre
+      ?.toLowerCase()
+      .includes(lowerCaseSearchTerm);
+    return (isGlobal || isForThisClient) && matchesSearch;
   });
 
   return (

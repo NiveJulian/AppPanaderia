@@ -2,10 +2,11 @@ import React from "react";
 import { useDispatch } from "react-redux";
 import { deleteSheetRow } from "../../../redux/actions/productActions";
 
-const TabDeleteRowButton = ({ rowIndex, onClose }) => {
+const TabDeleteRowButton = ({ rowIndex, onClose, onDeleted }) => {
   const dispatch = useDispatch();
-  const handleDelete = () => {
-    dispatch(deleteSheetRow(rowIndex));
+  const handleDelete = async () => {
+    await dispatch(deleteSheetRow(rowIndex));
+    if (onDeleted) onDeleted();
     onClose();
   };
 

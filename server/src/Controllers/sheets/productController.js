@@ -82,12 +82,20 @@ async function getSheetDataById(id) {
 async function appendRow(data) {
   try {
     const { nombre, cantidad, precio, clientId } = data;
-
+    // Asegurarse de que cantidad se registre correctamente
+    const parsedCantidad =
+      cantidad !== undefined && cantidad !== null && cantidad !== ""
+        ? parseInt(cantidad)
+        : 0;
+    const parsedPrecio =
+      precio !== undefined && precio !== null && precio !== ""
+        ? parseFloat(precio)
+        : 0;
     const product = await prisma.product.create({
       data: {
         name: nombre,
-        stock: parseInt(cantidad) || 0,
-        price: parseFloat(precio) || 0,
+        stock: parsedCantidad,
+        price: parsedPrecio,
         clientId: clientId || null,
         published: true,
       },
@@ -100,7 +108,6 @@ async function appendRow(data) {
         },
       },
     });
-
     return {
       message: "Product created successfully",
       product: {
@@ -127,8 +134,14 @@ async function updateRow(data) {
       where: { id },
       data: {
         name: nombre,
-        stock: parseInt(cantidad) || 0,
-        price: parseFloat(precio) || 0,
+        stock:
+          cantidad !== undefined && cantidad !== null && cantidad !== ""
+            ? parseInt(cantidad)
+            : 0,
+        price:
+          precio !== undefined && precio !== null && precio !== ""
+            ? parseFloat(precio)
+            : 0,
         published: publicado,
         clientId: clientId || null,
       },
@@ -162,21 +175,14 @@ async function updateRow(data) {
 
 async function deleteRowById(id) {
   try {
-    // Verificar si el producto tiene ventas asociadas
-    const salesCount = await prisma.sale.count({
+    // Eliminar todas las ventas asociadas a este producto
+    await prisma.sale.deleteMany({
       where: { productId: id },
     });
-
-    if (salesCount > 0) {
-      throw new Error(
-        `No se puede eliminar el producto porque tiene ${salesCount} venta(s) asociada(s). Elimine las ventas primero.`
-      );
-    }
-
+    // Ahora sí, eliminar el producto
     const product = await prisma.product.delete({
       where: { id },
     });
-
     return {
       message: "Product deleted successfully",
       product: {
@@ -233,10 +239,15 @@ async function createProductoByClientId(data, clientId) {
 async function getProductByClientID(userId) {
   try {
     const products = await prisma.product.findMany({
-      where: { deleted: false },
+      where: {
+        deleted: false,
+        OR: [
+          { clientId: null }, // productos globales
+          { client: { userId } }, // productos de clientes de este usuario
+        ],
+      },
       include: {
         client: {
-          where: { userId },
           select: {
             id: true,
             name: true,
@@ -330,11 +341,14 @@ async function getProductsByUserClients(userId) {
     });
     const clientIds = clients.map((c) => c.id);
 
-    // 2. Buscar todos los productos de esos clientes
+    // 2. Buscar todos los productos de esos clientes y productos globales
     const products = await prisma.product.findMany({
       where: {
-        clientId: { in: clientIds },
         deleted: false,
+        OR: [
+          { clientId: { in: clientIds } },
+          { clientId: null }, // productos globales
+        ],
       },
       include: {
         client: { select: { id: true, name: true } },

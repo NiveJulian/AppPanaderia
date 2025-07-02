@@ -16,6 +16,7 @@ const {
   getSaleById,
   getWeeklyAllSalesByClient,
   getMonthlySalesByClient,
+  deleteSalePermanently,
 } = require("../Controllers/sheets/sheetsController.js");
 const {
   getSheetData,
@@ -65,7 +66,6 @@ sheetsRouter.get("/data/:id", async (req, res) => {
 sheetsRouter.post("/data", async (req, res) => {
   try {
     const data = req.body;
-    console.log(data);
     const updates = await appendRow(data);
     res.json(updates);
   } catch (error) {
@@ -357,6 +357,16 @@ sheetsRouter.get("/sales/monthly/client/:clientId/:year", async (req, res) => {
   try {
     const { clientId, year } = req.params;
     const result = await getMonthlySalesByClient(clientId, year);
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+sheetsRouter.delete("/sale/permanent/:id", async (req, res) => {
+  try {
+    const id = req.params.id;
+    const result = await deleteSalePermanently(id);
     res.json(result);
   } catch (error) {
     res.status(500).json({ error: error.message });

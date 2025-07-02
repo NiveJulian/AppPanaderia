@@ -71,7 +71,7 @@ export default function TabFormCreateProduct({ isOpen, onClose, product, onProdu
       try {
         const newRow = {
           nombre: formData.nombre,
-          stock: formData.cantidad,
+          cantidad: formData.cantidad,
           precio: formData.precio,
         };
 
@@ -79,7 +79,7 @@ export default function TabFormCreateProduct({ isOpen, onClose, product, onProdu
           const updatedRows = {
             id: formData.id,
             nombre: formData.nombre,
-            stock: formData.cantidad,
+            cantidad: formData.cantidad,
             precio: formData.precio,
             clientId: formData.clientId || null,
           };
@@ -139,7 +139,7 @@ export default function TabFormCreateProduct({ isOpen, onClose, product, onProdu
         </div>
 
         <div className="mt-2">
-          <label htmlFor="clientId">Cliente (opcional)</label>
+          <label htmlFor="clientId">Cliente asignado</label>
           <select
             className={`bg-white w-full p-2 text-center mt-2 rounded-md border ${
               errors.clientId ? "border-red-500" : "border-gray-400"
@@ -149,13 +149,17 @@ export default function TabFormCreateProduct({ isOpen, onClose, product, onProdu
             value={formData.clientId}
             onChange={handleChange}
           >
-            <option value="">Seleccionar cliente (opcional)</option>
+            <option value="">Producto global (visible para todos los clientes)</option>
             {clientes.map((cliente) => (
               <option key={cliente.id} value={cliente.id}>
                 {cliente.name}
               </option>
             ))}
           </select>
+          <p className="text-xs text-gray-500 mt-1">
+            Si seleccionas un cliente, solo ese cliente podrá ver y vender este producto.<br/>
+            Si dejas la opción global, todos los clientes podrán verlo y venderlo.
+          </p>
           {errors.clientId && (
             <p className="text-red-500 text-xs">{errors.clientId}</p>
           )}

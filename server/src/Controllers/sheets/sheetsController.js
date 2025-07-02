@@ -1236,6 +1236,21 @@ async function getMonthlySalesByClient(clientId, year) {
   }
 }
 
+async function deleteSalePermanently(id) {
+  try {
+    const sale = await prisma.sale.delete({
+      where: { id },
+    });
+    return {
+      message: "Venta eliminada definitivamente",
+      sale,
+    };
+  } catch (error) {
+    console.log({ error: error.message });
+    throw new Error(error.message);
+  }
+}
+
 module.exports = {
   registerSaleDashboard,
   getSaleData,
@@ -1254,4 +1269,5 @@ module.exports = {
   getWeeklyAllSalesByClient,
   getSaleById,
   getMonthlySalesByClient,
+  deleteSalePermanently,
 };

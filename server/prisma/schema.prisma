@@ -36,7 +36,7 @@ model Product {
   price     Float
   published Boolean   @default(true)
   clientId  String?
-  client    Client?   @relation(fields: [clientId], references: [id])
+  client    Client?   @relation(fields: [clientId], references: [id], onDelete: Cascade)
   sales     Sale[]
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime? @updatedAt @map("updated_at")
@@ -73,9 +73,9 @@ model Sale {
   date        DateTime  @default(now())
   time        String    @default("00:00")
   userId      String
-  user        User      @relation(fields: [userId], references: [id])
-  client      Client    @relation(fields: [clientId], references: [id])
-  product     Product   @relation(fields: [productId], references: [id])
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  client      Client    @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  product     Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
   tickets     Ticket[]
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime? @updatedAt @map("updated_at")
@@ -87,7 +87,7 @@ model Sale {
 model Ticket {
   id        String    @id @default(uuid())
   saleId    String
-  sale      Sale      @relation(fields: [saleId], references: [id])
+  sale      Sale      @relation(fields: [saleId], references: [id], onDelete: Cascade)
   pdfBase64 String
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime? @updatedAt @map("updated_at")

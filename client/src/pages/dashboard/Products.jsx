@@ -34,6 +34,8 @@ const Products = () => {
     const response = await instance.get(
       `/api/sheets/products/user/${user.uid}`
     );
+
+    // console.log(response);
     setFilteredData(response.data);
   };
 
@@ -54,11 +56,12 @@ const Products = () => {
     const value = event.target.value.toLowerCase();
     setSearchTerm(value);
 
-    const filtered = data.filter(
+    // Filtrar sobre los datos originales (productos globales y de usuario)
+    const filtered = filteredData.filter(
       (item) =>
-        item.nombre.toLowerCase().includes(value) ||
-        item.categoria.toLowerCase().includes(value) ||
-        item.sku.toLowerCase().includes(value)
+        (item.nombre && item.nombre.toLowerCase().includes(value)) ||
+        (item.categoria && item.categoria.toLowerCase().includes(value)) ||
+        (item.sku && item.sku.toLowerCase().includes(value))
     );
 
     setFilteredData(filtered);
@@ -67,10 +70,14 @@ const Products = () => {
   };
 
   // Lógica de paginación
+  const safeFilteredData = Array.isArray(filteredData) ? filteredData : [];
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = filteredData.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+  const currentItems = safeFilteredData.slice(
+    indexOfFirstItem,
+    indexOfLastItem
+  );
+  const totalPages = Math.ceil(safeFilteredData.length / itemsPerPage);
 
   const handlePageChange = (pageNumber) => {
     setCurrentPage(pageNumber);
@@ -117,6 +124,7 @@ const Products = () => {
         <TabDeleteRowButton
           rowIndex={deleteRowIndex}
           onClose={() => toggleDeleteModal(null)}
+          onDeleted={fetchProducts}
         />
       )}
       {activePublicProd !== null && (
